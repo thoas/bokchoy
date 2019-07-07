@@ -50,7 +50,7 @@ func TestQueue_Save(t *testing.T) {
 		is := assert.New(t)
 		ctx := context.Background()
 		queue := s.bokchoy.Queue("tests.task.message")
-		task1, err := queue.Publish(ctx, "hello")
+		task1, err := queue.Publish(ctx, "hello", WithTTL(5*time.Second))
 		is.NotZero(task1)
 		is.NoError(err)
 
