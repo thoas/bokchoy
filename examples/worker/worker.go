@@ -1,0 +1,49 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+
+	"github.com/thoas/bokchoy"
+)
+
+func main() {
+	ctx := context.Background()
+
+	engine, err := bokchoy.New(ctx, bokchoy.Config{
+		Broker: bokchoy.BrokerConfig{
+			Type: "redis",
+			Redis: bokchoy.RedisConfig{
+				Type: "client",
+				Client: bokchoy.RedisClientConfig{
+					Addr: "localhost:6379",
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	engine.Queue("tasks.message").SubscribeFunc(func(r *bokchoy.Request) error {
+		fmt.Println("Receive request", r)
+		fmt.Println("Payload:", r.Task.Payload)
+
+		return nil
+	})
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	go func() {
+		for range c {
+			log.Print("Received signal, gracefully stopping")
+			engine.Stop(ctx)
+		}
+	}()
+
+	engine.Run(ctx)
+}

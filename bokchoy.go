@@ -56,6 +56,10 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 		defaultOptions: opts,
 	}
 
+	if opts.Serializer != nil {
+		bok.serializer = opts.Serializer
+	}
+
 	bok.broker, err = newBroker(ctx, cfg.Broker, logger.With(logging.String("component", "broker")))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to initialize broker")

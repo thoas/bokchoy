@@ -16,6 +16,7 @@ type Options struct {
 	Countdown      time.Duration
 	Timeout        time.Duration
 	RetryIntervals []time.Duration
+	Serializer     Serializer
 }
 
 func newOptions() *Options {
@@ -30,6 +31,13 @@ func newOptions() *Options {
 
 // Option is an option unit.
 type Option func(opts *Options)
+
+// WithSerializer defines the Serializer.
+func WithSerializer(serializer Serializer) Option {
+	return func(opts *Options) {
+		opts.Serializer = serializer
+	}
+}
 
 // WithTracer defines the Tracer.
 func WithTracer(tracer Tracer) Option {
