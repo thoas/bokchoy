@@ -6,13 +6,20 @@
 
 ## Introduction
 
-Bokchoy is a simple Go library for queueing tasks and processing them in the background with workers.
+Bokchoy is a simple and distributed Go library for queueing tasks and processing them in the background with workers.
+It should be integrated in your web stack easily and it's designed to have a low barrier entry for newcomers.
 
-It's powered by a generic engine implementation which currently supports
-[Redis](https://github.com/thoas/bokchoy/blob/master/broker_redis.go) and it's designed to
-have a low barrier to entry.
+It currently only supports [Redis](https://github.com/thoas/bokchoy/blob/master/broker_redis.go)
+(client, sentinel and cluster) with some Lua magic, but internally it relies on a generic
+broker implementation to extends it.
 
-It should be integrated in your web stack easily.
+## Motivation
+
+We all know, it is relatively easy to make a producer/receiver system in Go since the language contains builtins
+features to build it from scratch but we keep adding the same system everywhere instead of thinking reusable.
+
+Bokchoy is a plug and play component, it does its job and it does it well for you that you can focus
+on your business logic.
 
 ## Getting started
 
@@ -69,8 +76,8 @@ func main() {
 
 See [producer](examples/producer) directory for more information and to run it.
 
-Now we have a producer which can send tasks to our engine, we need a worker to execute
-tasks in the background:
+Now we have a producer which can send tasks to our engine, we need a worker to process
+them in the background:
 
 ```go
 package main
@@ -136,6 +143,21 @@ go get github.com/thoas/bokchoy
 
 ## Advanced topics
 
+### Delayed task
+
+When publishing a task, it will be immediately processed by the worker if it's not already occupied,
+you may want to delay the task on some occasions by using `bokchoy.WithCountdown` option:
+
+```go
+payload := map[string]string{
+    "data": "hello world",
+}
+
+queue.Publish(ctx, payload, bokchoy.WithCountdown(5*time.Second))
+```
+
+This task will be executed in 5 seconds.
+
 ### Custom serializer
 
 By default the task serializer is `JSON`, you can customize it when initializing
@@ -192,6 +214,9 @@ func main() {
     }, bokchoy.WithLogger(logger))
 }
 ```
+
+The builtin logger is based on [zap](https://github.com/uber-go/zap) but you can provide your
+own implementation easily if you have a central component.
 
 ### Worker Concurrency
 
@@ -321,9 +346,25 @@ fmt.Println("Number of delayed tasks:", stats.Delayed)
 fmt.Println("Number of total tasks:", stats.Total)
 ```
 
+## Middleware handlers
+
+Bokchoy comes equipped with an optional middleware package, providing a suite of standard middlewares.
+Middlewares have the same API as handlers. It's easy to implement them and think of them like `net/http` middlewares,
+they share the same purpose to follow the lifecycle of a Bokchoy request.
+
+### Core middlewares
+
+-----------------------------------------------------------------------------------------------------------
+| bokchoy/middleware    | description                                                                     |
+|:----------------------|:---------------------------------------------------------------------------------
+| RequestID             | Injects a request ID into the context of each request                           |
+-----------------------------------------------------------------------------------------------------------
+
+See [middleware](middleware) directory for more information.
+
 ## Contributing
 
-* Ping us on twitter:
+* Ping me on twitter:
   * [@thoas](https://twitter.com/thoas)
 * Fork the [project](https://github.com/thoas/bokchoy)
 * Fix [bugs](https://github.com/thoas/bokchoy/issues)
@@ -335,4 +376,3 @@ fmt.Println("Number of total tasks:", stats.Total)
 Bokchoy is highly influenced by the great [rq](https://github.com/rq/rq) and [celery](http://www.celeryproject.org/).
 
 Both are great projects well maintained but only used in a Python ecosystem.
-

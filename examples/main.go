@@ -19,10 +19,11 @@ import (
 	"github.com/thoas/bokchoy/middleware"
 )
 
-type Message struct {
+type message struct {
 	Data string `json:"data"`
 }
 
+// nolint: gocyclo, vet
 func main() {
 	var (
 		run            string
@@ -92,7 +93,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		task, err := queueFail.Publish(ctx, Message{Data: "hello"},
+		task, err := queueFail.Publish(ctx, message{Data: "hello"},
 			bokchoy.WithMaxRetries(3),
 			bokchoy.WithRetryIntervals(intervals))
 
@@ -106,7 +107,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		task, err := queue.Publish(ctx, Message{Data: "hello"},
+		task, err := queue.Publish(ctx, message{Data: "hello"},
 			bokchoy.WithCountdown(15*time.Second))
 		if err != nil {
 			log.Fatal(err)
@@ -119,7 +120,7 @@ func main() {
 		}
 
 		for i := 0; i < concurrency; i++ {
-			task, err := queue.Publish(ctx, Message{Data: "hello"})
+			task, err := queue.Publish(ctx, message{Data: "hello"})
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -132,7 +133,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		task, err := queue.Publish(ctx, Message{Data: "hello"},
+		task, err := queue.Publish(ctx, message{Data: "hello"},
 			bokchoy.WithTimeout(5*time.Second))
 		if err != nil {
 			log.Fatal(err)
@@ -158,7 +159,7 @@ func main() {
 
 		queue.SubscribeFunc(func(r *bokchoy.Request) error {
 			var (
-				msg  Message
+				msg  message
 				task = r.Task
 			)
 			err := mapstructure.Decode(task.Payload, &msg)

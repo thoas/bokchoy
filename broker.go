@@ -7,6 +7,7 @@ import (
 	"github.com/thoas/bokchoy/logging"
 )
 
+// Broker is the common interface to define a Broker.
 type Broker interface {
 	// Ping pings the redis broker to ensure it's well connected.
 	Ping() error

@@ -72,6 +72,7 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 	return bok, nil
 }
 
+// Use append a new middleware to the system.
 func (b *Bokchoy) Use(sub Subscriber) *Bokchoy {
 	b.middlewares = append(b.middlewares, sub)
 
@@ -178,7 +179,7 @@ func (b *Bokchoy) Subscribe(queueName string, sub Subscriber, options ...Option)
 	b.SubscribeFunc(queueName, sub.Consume)
 }
 
-// Subscribe registers a new subscriber function to consume tasks for a queue.
+// SubscribeFunc registers a new subscriber function to consume tasks for a queue.
 func (b *Bokchoy) SubscribeFunc(queueName string, f SubscriberFunc, options ...Option) {
 	b.Queue(queueName).SubscribeFunc(f, options...)
 }

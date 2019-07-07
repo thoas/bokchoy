@@ -165,6 +165,7 @@ func taskFromPayload(data map[string]interface{}, serializer Serializer) (*Task,
 	return t, nil
 }
 
+// ETADisplay returns the string representation of the ETA.
 func (t Task) ETADisplay() string {
 	if t.ETA.IsZero() {
 		return "0s"
@@ -173,6 +174,7 @@ func (t Task) ETADisplay() string {
 	return t.ETA.Sub(time.Now().UTC()).String()
 }
 
+// RetryETA returns the next ETA.
 func (t Task) RetryETA() time.Time {
 	if t.MaxRetries >= len(t.RetryIntervals) {
 		return t.ETA
@@ -226,6 +228,7 @@ func (t Task) MarshalLogObject(enc logging.ObjectEncoder) error {
 	return nil
 }
 
+// RetryIntervalsDisplay returns the string representation of the retry intervals.
 func (t Task) RetryIntervalsDisplay() string {
 	intervals := make([]string, len(t.RetryIntervals))
 	for i := range t.RetryIntervals {

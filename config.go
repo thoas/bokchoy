@@ -2,8 +2,13 @@ package bokchoy
 
 import "github.com/go-redis/redis"
 
+// RedisClusterConfig contains the redis cluster configuration.
 type RedisClusterConfig redis.ClusterOptions
+
+// RedisClientConfig contains the redis client configuration.
 type RedisClientConfig redis.Options
+
+// RedisSentinelConfig contains the redis sentinel configuration.
 type RedisSentinelConfig redis.FailoverOptions
 
 // RedisConfig contains all redis configuration: client, sentinel (failover), cluster.

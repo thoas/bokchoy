@@ -1,8 +1,9 @@
 package bokchoy
 
-// SubscriberHandler is a handler to handle incoming tasks.
+// SubscriberFunc is a handler to handle incoming tasks.
 type SubscriberFunc func(*Request) error
 
+// Consume consumes the request.
 func (s SubscriberFunc) Consume(r *Request) error {
 	return s(r)
 }

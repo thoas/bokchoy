@@ -37,6 +37,7 @@ type Queue struct {
 	onStart        []Subscriber
 }
 
+// Use appends a new subscriber middleware to the queue.
 func (q *Queue) Use(sub Subscriber) *Queue {
 	q.middlewares = append(q.middlewares, sub)
 
@@ -110,7 +111,7 @@ func (q *Queue) Subscribe(sub Subscriber, options ...Option) *Queue {
 	return q.SubscribeFunc(sub.Consume)
 }
 
-// Subscribe registers a new subscriber function to consume tasks.
+// SubscribeFunc registers a new subscriber function to consume tasks.
 func (q *Queue) SubscribeFunc(f SubscriberFunc, options ...Option) *Queue {
 	opts := q.defaultOptions
 
@@ -223,10 +224,12 @@ func (q *Queue) stop(ctx context.Context) {
 		logging.Object("queue", q))
 }
 
+// TaskKey returns the task key prefixed by the queue name.
 func (q Queue) TaskKey(taskID string) string {
 	return fmt.Sprintf("%s:%s", q.name, taskID)
 }
 
+// Cancel cancels a task using its ID.
 func (q *Queue) Cancel(ctx context.Context, taskID string) (*Task, error) {
 	task, err := q.Get(ctx, taskID)
 	if err != nil {
@@ -327,6 +330,7 @@ func (q *Queue) consumer() *consumer {
 	return q.consumers[n]
 }
 
+// Mount mounts middleware on the current request.
 func (q *Queue) Mount(r *Request) error {
 	for i := range q.middlewares {
 		err := q.middlewares[i].Consume(r)
