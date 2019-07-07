@@ -79,19 +79,21 @@ func TestConsumer_ConsumeRetries(t *testing.T) {
 		}()
 
 		task, err := queue.Publish(ctx, "error",
-			WithMaxRetries(maxRetries))
+			WithMaxRetries(maxRetries), WithRetryIntervals([]time.Duration{
+				1 * time.Second,
+				2 * time.Second,
+				3 * time.Second,
+			}))
 		is.NotZero(task)
 		is.NoError(err)
 
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		for {
 			select {
 			case <-ctx.Done():
-				is.True(false)
-
-				break
+				return
 			case <-ticker:
 				if maxRetries == 0 {
 					return
