@@ -1,2 +1,2 @@
 test:
-	go test -v -p 1
+	scripts/test.sh

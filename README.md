@@ -1,5 +1,9 @@
 # bokchoy
 
+[![Build Status](https://travis-ci.org/thoas/bokchoy.svg?branch=master)](https://travis-ci.org/thoas/bokchoy)
+[![GoDoc](https://godoc.org/github.com/thoas/bokchoy?status.svg)](https://godoc.org/github.com/thoas/bokchoy)
+[![Go report](https://goreportcard.com/badge/github.com/thoas/bokchoy)](https://goreportcard.com/report/github.com/thoas/bokchoy)
+
 ## Introduction
 
 Bokchoy is a simple Go library for queueing tasks and processing them in the background with workers.
