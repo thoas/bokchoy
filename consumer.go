@@ -27,8 +27,10 @@ func (c *consumer) stop(ctx context.Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.wg.Done()
-	c.closed = true
+	if c.closed == false {
+		c.wg.Done()
+		c.closed = true
+	}
 
 	c.logger.Debug(ctx, "Stopped")
 }

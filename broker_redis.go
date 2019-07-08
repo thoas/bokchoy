@@ -305,6 +305,8 @@ func (p *redisBroker) Set(taskKey string, data map[string]interface{}, expiratio
 		if err != nil {
 			return errors.Wrapf(err, "unable to HMSET %s", prefixedTaskKey)
 		}
+
+		return nil
 	}
 
 	values := []interface{}{int(expiration.Seconds())}

@@ -2,6 +2,6 @@
 
 export GO111MODULE=on
 
-time go test -v -p 1
+time go test -cover -v -p 1
 
 exit $?

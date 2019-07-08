@@ -250,10 +250,12 @@ func (q *Queue) Cancel(ctx context.Context, taskID string) (*Task, error) {
 // Get returns a task instance from the broker with its id.
 func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 	start := time.Now()
-
 	results, err := q.broker.Get(q.TaskKey(taskID))
 	if err != nil {
 		return nil, err
+	}
+	if results == nil {
+		return nil, ErrTaskNotFound
 	}
 
 	task, err := taskFromPayload(results, q.serializer)

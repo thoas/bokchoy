@@ -8,4 +8,7 @@ var (
 
 	// ErrTaskCanceled is returned when a task is canceled.
 	ErrTaskCanceled = fmt.Errorf("Task canceled")
+
+	// ErrTaskNotFound is returned when a task is not found.
+	ErrTaskNotFound = fmt.Errorf("Task not found")
 )

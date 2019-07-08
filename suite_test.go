@@ -46,6 +46,10 @@ func run(t *testing.T, f FuncTest) {
 		panic(err)
 	}
 
+	defer func() {
+		bok.Stop(ctx)
+	}()
+
 	suite := &suite{bok}
 
 	f(t, suite)
