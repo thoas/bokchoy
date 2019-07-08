@@ -139,6 +139,17 @@ func main() {
 }
 ```
 
+A worker is defined by subscribers, to define a `Subscriber` you have to follow this interface:
+
+```go
+type Subscriber interface {
+	Consume(*Request) error
+}
+```
+
+You can create your own struct which implements this interface or use the `SubscriberFunc` to
+generate a `Subscriber` from your function.
+
 See [worker](examples/worker) directory for more information and to run it.
 
 ## Installation
