@@ -11,15 +11,16 @@ import (
 )
 
 type consumer struct {
-	name       string
-	handler    SubscriberFunc
-	queue      *Queue
-	serializer Serializer
-	logger     logging.Logger
-	tracer     Tracer
-	wg         *sync.WaitGroup
-	closed     bool
-	mu         *sync.Mutex
+	name        string
+	handler     Subscriber
+	middlewares []func(Subscriber) Subscriber
+	queue       *Queue
+	serializer  Serializer
+	logger      logging.Logger
+	tracer      Tracer
+	wg          *sync.WaitGroup
+	closed      bool
+	mu          *sync.Mutex
 }
 
 func (c *consumer) stop(ctx context.Context) {
@@ -48,7 +49,7 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 	conn := make(chan result)
 
 	go func() {
-		err = c.handler(r)
+		err = c.handler.Consume(r)
 		if err != nil {
 			conn <- result{
 				err: err,
@@ -119,7 +120,7 @@ func (c *consumer) handleError(ctx context.Context, task *Task, err error) error
 	return nil
 }
 
-func (c *consumer) handle(r *Request) error {
+func (c *consumer) Consume(r *Request) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -127,11 +128,6 @@ func (c *consumer) handle(r *Request) error {
 		task = r.Task
 		err  error
 	)
-
-	err = c.queue.Mount(r)
-	if err != nil {
-		return err
-	}
 
 	ctx := r.Context()
 
@@ -201,7 +197,8 @@ func (c *consumer) consume(ctx context.Context) {
 			for i := range tasks {
 				task := tasks[i]
 
-				err = c.handle(&Request{Task: task})
+				req := &Request{Task: task}
+				err = chain(c.middlewares, c).Consume(req)
 				if err != nil {
 					c.tracer.Log(ctx, "Receive error when handling", err)
 				}

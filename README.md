@@ -357,6 +357,8 @@ they share the same purpose to follow the lifecycle of a Bokchoy request.
 -----------------------------------------------------------------------------------------------------------
 | bokchoy/middleware    | description                                                                     |
 |:----------------------|:---------------------------------------------------------------------------------
+| Logger                | Logs the start and end of each request with the elapsed processing time         |
+| Recoverer             | Gracefully absorb panics and prints the stack trace                             |
 | RequestID             | Injects a request ID into the context of each request                           |
 -----------------------------------------------------------------------------------------------------------
 

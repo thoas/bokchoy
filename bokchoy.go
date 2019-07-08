@@ -22,7 +22,7 @@ type Bokchoy struct {
 	defaultOptions *Options
 	broker         Broker
 	queues         map[string]*Queue
-	middlewares    []Subscriber
+	middlewares    []func(Subscriber) Subscriber
 }
 
 // New initializes a new Bokchoy instance.
@@ -73,8 +73,8 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 }
 
 // Use append a new middleware to the system.
-func (b *Bokchoy) Use(sub Subscriber) *Bokchoy {
-	b.middlewares = append(b.middlewares, sub)
+func (b *Bokchoy) Use(sub ...func(Subscriber) Subscriber) *Bokchoy {
+	b.middlewares = append(b.middlewares, sub...)
 
 	return b
 }

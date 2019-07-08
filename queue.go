@@ -30,7 +30,7 @@ type Queue struct {
 	consumers      []*consumer
 	defaultOptions *Options
 	wg             *sync.WaitGroup
-	middlewares    []Subscriber
+	middlewares    []func(Subscriber) Subscriber
 	onFailure      []Subscriber
 	onSuccess      []Subscriber
 	onComplete     []Subscriber
@@ -38,8 +38,8 @@ type Queue struct {
 }
 
 // Use appends a new subscriber middleware to the queue.
-func (q *Queue) Use(sub Subscriber) *Queue {
-	q.middlewares = append(q.middlewares, sub)
+func (q *Queue) Use(sub ...func(Subscriber) Subscriber) *Queue {
+	q.middlewares = append(q.middlewares, sub...)
 
 	return q
 }
@@ -130,9 +130,10 @@ func (q *Queue) SubscribeFunc(f SubscriberFunc, options ...Option) *Queue {
 			serializer: q.serializer,
 			logger: q.logger.With(logging.String("component",
 				fmt.Sprintf("consumer:%s#%d", q.name, i+1))),
-			tracer: q.tracer,
-			wg:     q.wg,
-			mu:     &sync.Mutex{},
+			tracer:      q.tracer,
+			wg:          q.wg,
+			mu:          &sync.Mutex{},
+			middlewares: q.middlewares,
 		}
 		q.consumers = append(q.consumers, consumer)
 	}
@@ -330,18 +331,6 @@ func (q *Queue) consumer() *consumer {
 	return q.consumers[n]
 }
 
-// Mount mounts middleware on the current request.
-func (q *Queue) Mount(r *Request) error {
-	for i := range q.middlewares {
-		err := q.middlewares[i].Consume(r)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (q *Queue) fireEvents(r *Request) error {
 	task := r.Task
 
@@ -389,7 +378,7 @@ func (q *Queue) fireEvents(r *Request) error {
 func (q *Queue) HandleRequest(ctx context.Context, r *Request) error {
 	consumer := q.consumer()
 
-	return consumer.handle(r)
+	return consumer.Consume(r)
 }
 
 // Save saves a task to the queue.

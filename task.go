@@ -241,8 +241,8 @@ func (t Task) RetryIntervalsDisplay() string {
 // String returns the string representation of Task.
 func (t Task) String() string {
 	return fmt.Sprintf(
-		"<Task id=%s, status=%s, published_at=%s>",
-		t.ID, t.StatusDisplay(), t.PublishedAt.String(),
+		"<Task name=%s id=%s, status=%s, published_at=%s>",
+		t.Name, t.ID, t.StatusDisplay(), t.PublishedAt.String(),
 	)
 }
 

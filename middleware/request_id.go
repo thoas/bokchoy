@@ -61,15 +61,19 @@ func init() {
 // where "random" is a base62 random string that uniquely identifies this go
 // process, and where the last number is an atomically incremented request
 // counter.
-var RequestID = bokchoy.SubscriberFunc(func(r *bokchoy.Request) error {
-	ctx := r.Context()
-	myid := atomic.AddUint64(&reqid, 1)
-	requestID := fmt.Sprintf("%s-%06d", prefix, myid)
-	ctx = context.WithValue(ctx, RequestIDKey, requestID)
-	*r = *r.WithContext(ctx)
 
-	return nil
-})
+func RequestID(next bokchoy.Subscriber) bokchoy.Subscriber {
+	return bokchoy.SubscriberFunc(func(r *bokchoy.Request) error {
+		ctx := r.Context()
+		myid := atomic.AddUint64(&reqid, 1)
+		requestID := fmt.Sprintf("%s-%06d", prefix, myid)
+		ctx = context.WithValue(ctx, RequestIDKey, requestID)
+
+		next.Consume(r.WithContext(ctx))
+
+		return nil
+	})
+}
 
 // GetReqID returns a request ID from the given context if one is present.
 // Returns the empty string if a request ID cannot be found.

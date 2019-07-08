@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"github.com/thoas/bokchoy"
+	"github.com/thoas/bokchoy/middleware"
 )
 
 func main() {
@@ -28,8 +29,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	engine.Use(middleware.Recoverer)
+	engine.Use(middleware.RequestID)
+	engine.Use(middleware.DefaultLogger)
+
 	engine.Queue("tasks.message").SubscribeFunc(func(r *bokchoy.Request) error {
-		fmt.Println("Receive request", r)
+		fmt.Println("Receive request:", r)
+		fmt.Println("Request context:", r.Context())
 		fmt.Println("Payload:", r.Task.Payload)
 
 		return nil
