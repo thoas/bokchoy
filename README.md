@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Bokchoy is a simple and distributed Go library for queueing tasks and processing them in the background with workers.
+Bokchoy is a simple Go library for queueing tasks and processing them in the background with workers.
 It should be integrated in your web stack easily and it's designed to have a low barrier entry for newcomers.
 
 It currently only supports [Redis](https://github.com/thoas/bokchoy/blob/master/broker_redis.go)
@@ -15,7 +15,7 @@ broker implementation to extends it.
 
 ## Motivation
 
-We all know, it is relatively easy to make a producer/receiver system in Go since the language contains builtins
+It's relatively easy to make a producer/receiver system in Go since the language contains builtins
 features to build it from scratch but we keep adding the same system everywhere instead of thinking reusable.
 
 Bokchoy is a plug and play component, it does its job and it does it well for you that you can focus
