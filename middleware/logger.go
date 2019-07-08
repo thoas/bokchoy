@@ -117,10 +117,12 @@ func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
 		cW(l.buf, l.useColor, bRed, "%s", task.StatusDisplay())
 	}
 
+	l.buf.WriteString(" - ")
+
 	if task.Result == nil {
-		cW(l.buf, l.useColor, bBlue, " with no result")
+		cW(l.buf, l.useColor, bBlue, "result: (empty)")
 	} else {
-		cW(l.buf, l.useColor, bBlue, " with result \"%s\"", task.Result)
+		cW(l.buf, l.useColor, bBlue, "result: \"%s\"", task.Result)
 	}
 
 	l.buf.WriteString(" in ")

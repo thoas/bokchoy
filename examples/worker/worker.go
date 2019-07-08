@@ -38,6 +38,8 @@ func main() {
 		fmt.Println("Request context:", r.Context())
 		fmt.Println("Payload:", r.Task.Payload)
 
+		r.Task.Result = "You can store your result here"
+
 		return nil
 	})
 

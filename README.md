@@ -21,6 +21,14 @@ features to build it from scratch but we keep adding the same system everywhere 
 Bokchoy is a plug and play component, it does its job and it does it well for you that you can focus
 on your business logic.
 
+## Features
+
+* **Lightweight**
+* **A Simple API close to net/http** - if you already use `net/http` then you can learn it pretty quickly
+* **Designed with a modular/composable APIs** - middlewares, queue middlewares
+* **Context control** - built on `context` package, providing value chaining, cancelations and timeouts
+* **Highly configurable** - tons of options to swap internal parts (broker, logger, timeouts, etc), if you cannot customize something then an option is missing
+
 ## Getting started
 
 First, run a Redis server, of course:
@@ -182,7 +190,7 @@ You will be capable to define a [msgpack](https://msgpack.org/), [yaml](https://
 
 ### Custom logger
 
-By default the logger is disabled, you can provide a more verbose logger with options:
+By default the internal logger is disabled, you can provide a more verbose logger with options:
 
 ```go
 import (
@@ -217,6 +225,8 @@ func main() {
 
 The builtin logger is based on [zap](https://github.com/uber-go/zap) but you can provide your
 own implementation easily if you have a central component.
+
+If you don't need that much information, you can enable the [Logger middleware](#core-middlewares).
 
 ### Worker Concurrency
 
@@ -289,6 +299,25 @@ queue.OnFailureFunc(func(r *bokchoy.Request) error {
     return nil
 })
 ```
+
+### Store results
+
+By default, if you don't mutate the task in the subscriber handler its result will be always `nil`.
+
+You can store a result in your task to keep it for later, for example: you might need statistics from a twitter profile
+to save them later.
+
+```go
+queue.SubscribeFunc(func(r *bokchoy.Request) error {
+	r.Task.Result = map[string]string{"result": "wow!"}
+
+	return nil
+})
+```
+
+You can store anything as long as your serializer can serializes it.
+
+Keep in mind the default task TTL is `180 seconds`, you can override it with `bokchoy.WithTTL` option.
 
 ### Helpers
 
@@ -378,3 +407,5 @@ See [middleware](middleware) directory for more information.
 Bokchoy is highly influenced by the great [rq](https://github.com/rq/rq) and [celery](http://www.celeryproject.org/).
 
 Both are great projects well maintained but only used in a Python ecosystem.
+
+Some parts (middlewares mostly) of Bokchoy are heavily inspired or taken from [go-chi](https://github.com/go-chi/chi).
