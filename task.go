@@ -162,6 +162,15 @@ func TaskFromPayload(data map[string]interface{}, serializer Serializer) (*Task,
 		}
 	}
 
+	rawResult, ok := data["result"].(string)
+	if ok {
+		err = serializer.Loads([]byte(rawResult), &t.Result)
+
+		if err != nil {
+			return nil, errors.Wrapf(ErrAttributeError, "cannot unserialize `result`")
+		}
+	}
+
 	return t, nil
 }
 

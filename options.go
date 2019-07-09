@@ -17,16 +17,26 @@ type Options struct {
 	Timeout        time.Duration
 	RetryIntervals []time.Duration
 	Serializer     Serializer
+	Initialize     bool
 }
 
 func newOptions() *Options {
-	return &Options{
-		Concurrency:    defaultConcurrency,
-		MaxRetries:     defaultMaxRetries,
-		TTL:            defaultTTL,
-		Timeout:        defaultTimeout,
-		RetryIntervals: defaultRetryIntervals,
+	opts := &Options{}
+
+	options := []Option{
+		WithConcurrency(defaultConcurrency),
+		WithMaxRetries(defaultMaxRetries),
+		WithTTL(defaultTTL),
+		WithTimeout(defaultTimeout),
+		WithRetryIntervals(defaultRetryIntervals),
+		WithInitialize(true),
 	}
+
+	for i := range options {
+		options[i](opts)
+	}
+
+	return opts
 }
 
 // Option is an option unit.
@@ -36,6 +46,13 @@ type Option func(opts *Options)
 func WithSerializer(serializer Serializer) Option {
 	return func(opts *Options) {
 		opts.Serializer = serializer
+	}
+}
+
+// WithInitialize defines if the broker needs to be initialized.
+func WithInitialize(initialize bool) Option {
+	return func(opts *Options) {
+		opts.Initialize = initialize
 	}
 }
 

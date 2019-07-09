@@ -9,7 +9,10 @@ import (
 
 // Broker is the common interface to define a Broker.
 type Broker interface {
-	// Ping pings the redis broker to ensure it's well connected.
+	// Initialize initializes the broker.
+	Initialize(context.Context) error
+
+	// Ping pings the broker to ensure it's well connected.
 	Ping() error
 
 	// Get returns raw data stored in broker.
@@ -35,19 +38,15 @@ type Broker interface {
 }
 
 // newBroker initializes a new Broker instance.
-func newBroker(ctx context.Context, cfg BrokerConfig, logger logging.Logger) (Broker, error) {
+func newBroker(ctx context.Context, cfg BrokerConfig, logger logging.Logger) Broker {
 	var (
 		broker Broker
-		err    error
 	)
 
 	switch cfg.Type {
 	default:
-		broker, err = newRedisBroker(ctx, cfg.Redis, logger)
-		if err != nil {
-			return nil, err
-		}
+		broker = newRedisBroker(ctx, cfg.Redis, logger)
 	}
 
-	return broker, err
+	return broker
 }

@@ -9,6 +9,32 @@ import (
 	"github.com/thoas/bokchoy"
 )
 
+func TestQueue_Consumer(t *testing.T) {
+	run(t, func(t *testing.T, s *suite) {
+		is := assert.New(t)
+		queue := s.bokchoy.Queue("tests.task.message")
+		queue.SubscribeFunc(func(r *bokchoy.Request) error {
+			return nil
+		})
+		is.NotZero(queue.Consumer())
+	})
+}
+
+func TestQueue_Cancel(t *testing.T) {
+	run(t, func(t *testing.T, s *suite) {
+		is := assert.New(t)
+		ctx := context.Background()
+		queue := s.bokchoy.Queue("tests.task.message")
+		task1, err := queue.Publish(ctx, "hello", bokchoy.WithTTL(10*time.Second))
+		is.NotZero(task1)
+		is.NoError(err)
+		task2, err := queue.Cancel(ctx, task1.ID)
+		is.NotZero(task2)
+		is.NoError(err)
+		is.True(task2.IsStatusCanceled())
+	})
+}
+
 func TestQueue_Save(t *testing.T) {
 	run(t, func(t *testing.T, s *suite) {
 		is := assert.New(t)
@@ -70,26 +96,35 @@ func TestQueue_Publish(t *testing.T) {
 	})
 }
 
+type consumer struct {
+	ticker chan struct{}
+}
+
+func (c consumer) Consume(r *bokchoy.Request) error {
+	c.ticker <- struct{}{}
+
+	return nil
+}
+
 func TestQueue_ConsumeDelayed(t *testing.T) {
 	run(t, func(t *testing.T, s *suite) {
 		is := assert.New(t)
 		ctx := context.Background()
 
-		queue := s.bokchoy.Queue("tests.task.message")
-		ticker := make(chan struct{})
+		consumer := &consumer{
+			ticker: make(chan struct{}),
+		}
 
-		queue.SubscribeFunc(func(r *bokchoy.Request) error {
-			ticker <- struct{}{}
+		queueName := "tests.task.message"
 
-			return nil
-		})
+		s.bokchoy.Subscribe(queueName, consumer)
 
 		go func() {
 			err := s.bokchoy.Run(ctx)
 			is.NoError(err)
 		}()
 
-		task, err := queue.Publish(ctx, "world", bokchoy.WithCountdown(2*time.Second))
+		task, err := s.bokchoy.Publish(ctx, queueName, "world", bokchoy.WithCountdown(2*time.Second))
 		is.NotZero(task)
 		is.NoError(err)
 
@@ -99,7 +134,7 @@ func TestQueue_ConsumeDelayed(t *testing.T) {
 		select {
 		case <-ctx.Done():
 			is.True(false)
-		case <-ticker:
+		case <-consumer.ticker:
 			is.True(true)
 		}
 

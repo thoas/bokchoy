@@ -6,6 +6,9 @@ import (
 	"github.com/thoas/bokchoy/logging"
 )
 
+// DefaultTracer is the default tracer.
+var DefaultTracer = NewTracerLogger(logging.DefaultLogger)
+
 // Tracer is a component used to trace errors.
 type Tracer interface {
 	Log(context.Context, string, error)

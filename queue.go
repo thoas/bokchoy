@@ -325,7 +325,8 @@ func (q *Queue) consume(ctx context.Context, name string, prefix string, eta tim
 	return tasks, nil
 }
 
-func (q *Queue) consumer() *consumer {
+// Consumer returns a random consumer.
+func (q *Queue) Consumer() *consumer {
 	rand.Seed(time.Now().Unix())
 
 	n := rand.Int() % len(q.consumers)
@@ -378,7 +379,7 @@ func (q *Queue) fireEvents(r *Request) error {
 
 // HandleRequest handles a request synchronously with a consumer.
 func (q *Queue) HandleRequest(ctx context.Context, r *Request) error {
-	consumer := q.consumer()
+	consumer := q.Consumer()
 
 	return consumer.Consume(r)
 }

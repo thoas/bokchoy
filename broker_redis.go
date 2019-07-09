@@ -71,7 +71,7 @@ return cjson.encode(data)`,
 }
 
 // newRedisBroker initializes a new redis client.
-func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger) (*redisBroker, error) {
+func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger) *redisBroker {
 	var clt redisClient
 
 	switch cfg.Type {
@@ -125,21 +125,15 @@ func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger)
 
 	}
 
-	b := &redisBroker{
+	return &redisBroker{
 		clt:    clt,
 		prefix: cfg.Prefix,
 		logger: logger,
 	}
-
-	err := b.initialize(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
 
-func (p *redisBroker) initialize(ctx context.Context) error {
+// Initialize initializes the redis broker.
+func (p *redisBroker) Initialize(ctx context.Context) error {
 	err := p.clt.Ping().Err()
 	if err != nil {
 		return err

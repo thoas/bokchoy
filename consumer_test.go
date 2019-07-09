@@ -10,6 +10,14 @@ import (
 	"github.com/thoas/bokchoy"
 )
 
+type noopconsumer struct {
+	ticker chan struct{}
+}
+
+func (c noopconsumer) Consume(r *bokchoy.Request) error {
+	return nil
+}
+
 func TestConsumer_Consume(t *testing.T) {
 	run(t, func(t *testing.T, s *suite) {
 		is := assert.New(t)
@@ -22,17 +30,24 @@ func TestConsumer_Consume(t *testing.T) {
 		queue.SubscribeFunc(func(r *bokchoy.Request) error {
 			time.Sleep(time.Millisecond * 500)
 
+			r.Task.Result = r.Task.Payload
+
 			ticker <- struct{}{}
 
 			return nil
-		})
+		}, bokchoy.WithConcurrency(1))
+		consumer := &noopconsumer{}
+		queue.OnStart(consumer).
+			OnComplete(consumer).
+			OnFailure(consumer).
+			OnSuccess(consumer)
 
 		go func() {
 			err := s.bokchoy.Run(ctx)
 			is.NoError(err)
 		}()
 
-		task, err := queue.Publish(ctx, "world")
+		task, err := queue.Publish(ctx, "world", bokchoy.WithSerializer(&bokchoy.JSONSerializer{}))
 		is.NoError(err)
 
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -50,6 +65,7 @@ func TestConsumer_Consume(t *testing.T) {
 		task, err = queue.Get(ctx, task.ID)
 		is.NoError(err)
 		is.True(task.IsStatusSucceeded())
+		is.Equal(task.Payload, task.Result)
 
 		is.Equal(fmt.Sprintf("%.1f", task.ExecTime), "0.5")
 	})

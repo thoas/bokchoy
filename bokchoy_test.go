@@ -14,3 +14,11 @@ func TestBokchoy_Queue(t *testing.T) {
 		is.Equal(queue.Name(), "tests.task.message")
 	})
 }
+
+func TestBokchoy_Flush(t *testing.T) {
+	run(t, func(t *testing.T, s *suite) {
+		is := assert.New(t)
+		err := s.bokchoy.Flush()
+		is.NoError(err)
+	})
+}

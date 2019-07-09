@@ -37,7 +37,7 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 		tracer Tracer
 	)
 
-	logger, _ := logging.NewNopLogger()
+	logger := logging.NewNopLogger()
 	if opts.Logger != nil {
 		logger = opts.Logger
 	}
@@ -60,9 +60,16 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 		bok.serializer = opts.Serializer
 	}
 
-	bok.broker, err = newBroker(ctx, cfg.Broker, logger.With(logging.String("component", "broker")))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to initialize broker")
+	bok.broker = newBroker(ctx, cfg.Broker,
+		logger.With(logging.String("component", "broker")))
+
+	if opts.Initialize {
+		err = bok.broker.Initialize(ctx)
+		if err != nil {
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to initialize broker")
+			}
+		}
 	}
 
 	for i := range cfg.Queues {
