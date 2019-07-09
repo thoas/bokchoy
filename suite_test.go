@@ -1,15 +1,17 @@
-package bokchoy
+package bokchoy_test
 
 import (
 	"context"
 	"log"
 	"testing"
 
+	"github.com/thoas/bokchoy"
 	"github.com/thoas/bokchoy/logging"
+	"github.com/thoas/bokchoy/middleware"
 )
 
 type suite struct {
-	bokchoy *Bokchoy
+	bokchoy *bokchoy.Bokchoy
 }
 
 type FuncTest func(t *testing.T, s *suite)
@@ -24,22 +26,24 @@ func run(t *testing.T, f FuncTest) {
 
 	ctx := context.Background()
 
-	bok, err := New(ctx, Config{
-		Broker: BrokerConfig{
+	bok, err := bokchoy.New(ctx, bokchoy.Config{
+		Broker: bokchoy.BrokerConfig{
 			Type: "redis",
-			Redis: RedisConfig{
+			Redis: bokchoy.RedisConfig{
 				Type: "client",
-				Client: RedisClientConfig{
+				Client: bokchoy.RedisClientConfig{
 					Addr: "localhost:6379",
 				},
 			},
 		},
-		Queues: []QueueConfig{
+		Queues: []bokchoy.QueueConfig{
 			{
 				Name: "tests.task.message",
 			},
 		},
-	}, WithLogger(logger.With(logging.String("logger", "bokchoy"))))
+	}, bokchoy.WithLogger(logger.With(logging.String("logger", "bokchoy"))))
+	bok.Use(middleware.RequestID)
+	bok.Use(middleware.Recoverer)
 
 	err = bok.Empty(ctx)
 	if err != nil {

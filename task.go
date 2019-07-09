@@ -61,8 +61,8 @@ func NewTask(name string, payload interface{}, options ...Option) *Task {
 	return t
 }
 
-// taskFromPayload returns a Task instance from raw data.
-func taskFromPayload(data map[string]interface{}, serializer Serializer) (*Task, error) {
+// TaskFromPayload returns a Task instance from raw data.
+func TaskFromPayload(data map[string]interface{}, serializer Serializer) (*Task, error) {
 	var ok bool
 	var err error
 
@@ -391,7 +391,9 @@ func (t *Task) MarkAsSucceeded() {
 func (t *Task) MarkAsFailed(err error) {
 	t.ProcessedAt = time.Now().UTC()
 	t.Status = taskStatusFailed
-	t.Error = err
+	if err != nil {
+		t.Error = err
+	}
 	t.ExecTime = t.ProcessedAt.Sub(t.StartedAt).Seconds()
 }
 

@@ -1,4 +1,4 @@
-package bokchoy
+package bokchoy_test
 
 import (
 	"testing"
@@ -11,6 +11,6 @@ func TestBokchoy_Queue(t *testing.T) {
 		is := assert.New(t)
 		queue := s.bokchoy.Queue("tests.task.message")
 		is.NotZero(queue)
-		is.Equal(queue.name, "tests.task.message")
+		is.Equal(queue.Name(), "tests.task.message")
 	})
 }

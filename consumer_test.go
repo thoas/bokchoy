@@ -1,4 +1,4 @@
-package bokchoy
+package bokchoy_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/thoas/bokchoy"
 )
 
 func TestConsumer_Consume(t *testing.T) {
@@ -18,7 +19,7 @@ func TestConsumer_Consume(t *testing.T) {
 		ticker := make(chan struct{})
 
 		ctx := context.Background()
-		queue.SubscribeFunc(func(r *Request) error {
+		queue.SubscribeFunc(func(r *bokchoy.Request) error {
 			time.Sleep(time.Millisecond * 500)
 
 			ticker <- struct{}{}
@@ -65,7 +66,7 @@ func TestConsumer_ConsumeRetries(t *testing.T) {
 		ticker := make(chan struct{}, maxRetries)
 
 		ctx := context.Background()
-		queue.SubscribeFunc(func(r *Request) error {
+		queue.SubscribeFunc(func(r *bokchoy.Request) error {
 			maxRetries--
 
 			ticker <- struct{}{}
@@ -79,7 +80,7 @@ func TestConsumer_ConsumeRetries(t *testing.T) {
 		}()
 
 		task, err := queue.Publish(ctx, "error",
-			WithMaxRetries(maxRetries), WithRetryIntervals([]time.Duration{
+			bokchoy.WithMaxRetries(maxRetries), bokchoy.WithRetryIntervals([]time.Duration{
 				1 * time.Second,
 				2 * time.Second,
 				3 * time.Second,
@@ -107,7 +108,7 @@ func TestConsumer_ConsumeRetries(t *testing.T) {
 
 		task, err = queue.Get(ctx, task.ID)
 		is.NoError(err)
-		is.Equal(task.Status, taskStatusFailed)
+		is.True(task.IsStatusFailed())
 		is.Equal(task.MaxRetries, 0)
 	})
 }
@@ -119,7 +120,7 @@ func TestConsumer_ConsumeLong(t *testing.T) {
 		queue := s.bokchoy.Queue("tests.task.long")
 
 		ctx := context.Background()
-		queue.SubscribeFunc(func(r *Request) error {
+		queue.SubscribeFunc(func(r *bokchoy.Request) error {
 			time.Sleep(3 * time.Second)
 
 			return nil
@@ -131,8 +132,8 @@ func TestConsumer_ConsumeLong(t *testing.T) {
 		}()
 
 		task, err := queue.Publish(ctx, "long",
-			WithTimeout(2*time.Second),
-			WithMaxRetries(0))
+			bokchoy.WithTimeout(2*time.Second),
+			bokchoy.WithMaxRetries(0))
 
 		is.NotZero(task)
 		is.NoError(err)
@@ -151,6 +152,6 @@ func TestConsumer_ConsumeLong(t *testing.T) {
 
 		task, err = queue.Get(ctx, task.ID)
 		is.NoError(err)
-		is.Equal(task.Status, taskStatusCanceled)
+		is.True(task.IsStatusCanceled())
 	})
 }

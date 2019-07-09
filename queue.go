@@ -258,7 +258,7 @@ func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 		return nil, ErrTaskNotFound
 	}
 
-	task, err := taskFromPayload(results, q.serializer)
+	task, err := TaskFromPayload(results, q.serializer)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (q *Queue) consume(ctx context.Context, name string, prefix string, eta tim
 	tasks := make([]*Task, 0, len(results))
 
 	for i := range results {
-		task, err := taskFromPayload(results[i], q.serializer)
+		task, err := TaskFromPayload(results[i], q.serializer)
 		if err != nil {
 			q.tracer.Log(ctx, "Receive error when casting payload to Task", err)
 			continue

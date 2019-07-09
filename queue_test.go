@@ -1,4 +1,4 @@
-package bokchoy
+package bokchoy_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/thoas/bokchoy"
 )
 
 func TestQueue_Save(t *testing.T) {
@@ -13,7 +14,7 @@ func TestQueue_Save(t *testing.T) {
 		is := assert.New(t)
 		ctx := context.Background()
 		queue := s.bokchoy.Queue("tests.task.message")
-		task1, err := queue.Publish(ctx, "hello", WithTTL(10*time.Second))
+		task1, err := queue.Publish(ctx, "hello", bokchoy.WithTTL(10*time.Second))
 		is.NotZero(task1)
 		is.NoError(err)
 
@@ -23,7 +24,7 @@ func TestQueue_Save(t *testing.T) {
 		task2, err := queue.Get(ctx, task1.ID)
 		is.NotZero(task2)
 		is.NoError(err)
-		is.Equal(task2.Status, taskStatusSucceeded)
+		is.True(task2.IsStatusSucceeded())
 		is.NotZero(task2.ProcessedAt)
 		is.NotZero(task2.ExecTime)
 	})
@@ -44,12 +45,12 @@ func TestQueue_Publish(t *testing.T) {
 		is.Equal(stats.Delayed, 0)
 		is.Nil(err)
 		is.NotZero(task1)
-		is.Equal(task1.Name, queue.name)
+		is.Equal(task1.Name, queue.Name())
 
 		err = queue.Empty(ctx)
 		is.NoError(err)
 
-		task2, err := queue.Publish(ctx, "hello", WithCountdown(60*time.Second))
+		task2, err := queue.Publish(ctx, "hello", bokchoy.WithCountdown(60*time.Second))
 		is.NoError(err)
 		stats, err = queue.Count(ctx)
 		is.NoError(err)
@@ -59,7 +60,7 @@ func TestQueue_Publish(t *testing.T) {
 		is.Equal(stats.Total, 1)
 		is.Equal(stats.Direct, 0)
 		is.NotZero(task2)
-		is.Equal(task2.Name, queue.name)
+		is.Equal(task2.Name, queue.Name())
 
 		task3, err := queue.Get(ctx, task2.ID)
 		is.NoError(err)
@@ -77,7 +78,7 @@ func TestQueue_ConsumeDelayed(t *testing.T) {
 		queue := s.bokchoy.Queue("tests.task.message")
 		ticker := make(chan struct{})
 
-		queue.SubscribeFunc(func(r *Request) error {
+		queue.SubscribeFunc(func(r *bokchoy.Request) error {
 			ticker <- struct{}{}
 
 			return nil
@@ -88,7 +89,7 @@ func TestQueue_ConsumeDelayed(t *testing.T) {
 			is.NoError(err)
 		}()
 
-		task, err := queue.Publish(ctx, "world", WithCountdown(2*time.Second))
+		task, err := queue.Publish(ctx, "world", bokchoy.WithCountdown(2*time.Second))
 		is.NotZero(task)
 		is.NoError(err)
 
