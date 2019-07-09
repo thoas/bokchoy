@@ -404,6 +404,21 @@ they share the same purpose to follow the lifecycle of a Bokchoy request.
 
 See [middleware](middleware) directory for more information.
 
+
+## FAQs
+
+### Are Task IDs unique?
+
+Yes! There are based on [ulid](https://github.com/oklog/ulid).
+
+### Is exactly-once execution of tasks guaranteed?
+
+It's guaranteed by the underlying broker,
+it uses [BRPOP](https://redis.io/commands/brpop)/[BLPOP](https://redis.io/commands/blpop) from Redis.
+
+If multiple clients are blocked for the same key, the first client to be served
+is the one that was waiting for more time (the first that blocked for the key).
+
 ## Contributing
 
 * Ping me on twitter:
