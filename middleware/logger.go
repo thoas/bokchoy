@@ -27,9 +27,10 @@ func RequestLogger(f LogFormatter) func(next bokchoy.Handler) bokchoy.Handler {
 			entry := f.NewLogEntry(r)
 
 			t1 := time.Now()
-			defer func() {
+
+			r = bokchoy.WithAfterRequestFunc(r, func() {
 				entry.Write(r, time.Since(t1))
-			}()
+			})
 
 			next.Handle(WithLogEntry(r, entry))
 

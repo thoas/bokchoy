@@ -1,3 +1,5 @@
+// inspired from https://github.com/go-chi/chi/blob/master/middleware/recoverer.go
+
 package middleware
 
 import (
@@ -9,6 +11,8 @@ import (
 	"github.com/thoas/bokchoy"
 )
 
+// Recoverer is a middleware that recovers from panics, logs the panic (and a
+// backtrace), and adds the error to the request context
 func Recoverer(next bokchoy.Handler) bokchoy.Handler {
 	return bokchoy.HandlerFunc(func(r *bokchoy.Request) error {
 		var err error
@@ -25,10 +29,10 @@ func Recoverer(next bokchoy.Handler) bokchoy.Handler {
 
 				var ok bool
 				if err, ok = rvr.(error); !ok {
-					err = fmt.Errorf("%v", err)
+					err = fmt.Errorf("%v", rvr)
 				}
 
-				err = errors.WithStack(err)
+				*r = *bokchoy.WithError(r, errors.WithStack(err))
 			}
 		}()
 

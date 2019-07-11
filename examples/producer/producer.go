@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/thoas/bokchoy"
 )
@@ -31,7 +32,7 @@ func main() {
 		"data": "hello world",
 	}
 
-	task, err := engine.Queue("tasks.message").Publish(ctx, payload)
+	task, err := engine.Queue("tasks.message").Publish(ctx, payload, bokchoy.WithTimeout(1*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}

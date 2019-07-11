@@ -8,11 +8,25 @@ import (
 	"os/signal"
 
 	"github.com/thoas/bokchoy"
+	"github.com/thoas/bokchoy/logging"
 	"github.com/thoas/bokchoy/middleware"
 )
 
 func main() {
-	ctx := context.Background()
+	var (
+		logger      logging.Logger
+		ctx         = context.Background()
+		loggerLevel = os.Getenv("LOGGER_LEVEL")
+	)
+
+	if loggerLevel == "development" {
+		logger, err := logging.NewDevelopmentLogger()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer logger.Sync()
+	}
 
 	engine, err := bokchoy.New(ctx, bokchoy.Config{
 		Broker: bokchoy.BrokerConfig{
@@ -24,14 +38,14 @@ func main() {
 				},
 			},
 		},
-	})
+	}, bokchoy.WithLogger(logger))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	engine.Use(middleware.Recoverer)
-	engine.Use(middleware.RequestID)
 	engine.Use(middleware.DefaultLogger)
+	engine.Use(middleware.RequestID)
 
 	engine.Queue("tasks.message").HandleFunc(func(r *bokchoy.Request) error {
 		fmt.Println("Receive request:", r)
