@@ -51,7 +51,7 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 	conn := make(chan result)
 
 	go func() {
-		err = c.handler.Consume(r)
+		err = chain(c.middlewares, c.handler).Consume(r)
 		if err != nil {
 			conn <- result{
 				err: err,
@@ -200,7 +200,7 @@ func (c *consumer) consume(ctx context.Context) {
 				task := tasks[i]
 
 				req := &Request{Task: task}
-				err = chain(c.middlewares, c).Consume(req)
+				err = c.Consume(req)
 				if err != nil {
 					c.tracer.Log(ctx, "Receive error when handling", err)
 				}
