@@ -2,7 +2,7 @@ package bokchoy
 
 import (
 	"context"
-	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/thoas/bokchoy/logging"
@@ -126,9 +126,8 @@ func (b *Bokchoy) Queue(name string) *Queue {
 
 // Stop stops all queues and consumers.
 func (b *Bokchoy) Stop(ctx context.Context) {
-	fields := make([]logging.Field, len(b.queues))
-	for i, name := range b.QueueNames() {
-		fields[i] = logging.String(fmt.Sprintf("queue_%d", i), name)
+	fields := []logging.Field{
+		logging.String("queues", strings.Join(b.QueueNames(), ",")),
 	}
 
 	b.logger.Debug(ctx, "Stopping queues...", fields...)
@@ -158,9 +157,8 @@ func (b *Bokchoy) Run(ctx context.Context) error {
 		return err
 	}
 
-	fields := make([]logging.Field, len(b.queues))
-	for i, name := range b.QueueNames() {
-		fields[i] = logging.String(fmt.Sprintf("queue_%d", i), name)
+	fields := []logging.Field{
+		logging.String("queues", strings.Join(b.QueueNames(), ",")),
 	}
 
 	b.logger.Debug(ctx, "Starting queues...", fields...)

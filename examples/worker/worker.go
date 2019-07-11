@@ -14,13 +14,14 @@ import (
 
 func main() {
 	var (
+		err         error
 		logger      logging.Logger
 		ctx         = context.Background()
 		loggerLevel = os.Getenv("LOGGER_LEVEL")
 	)
 
 	if loggerLevel == "development" {
-		logger, err := logging.NewDevelopmentLogger()
+		logger, err = logging.NewDevelopmentLogger()
 		if err != nil {
 			log.Fatal(err)
 		}

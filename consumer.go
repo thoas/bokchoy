@@ -50,6 +50,9 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 
 	conn := make(chan result)
 
+	// we execute the complete request lifecycle in a goroutine
+	// to handle timeout and retrieve the worker back if the executing
+	// time a task is higher than timeout.
 	go func() {
 		defer func() {
 			conn <- result{
@@ -60,17 +63,25 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 		middlewares := c.middlewares
 		middlewares = append(middlewares, c.handleRequest)
 
+		// chain wraps the n middleware with its n-1
+		// we keep the reference of the final request since it contains
+		// a modified context by middlewares.
 		err = chain(middlewares, HandlerFunc(func(req *Request) error {
 			*r = *req
+
+			// execute the underlying handler.
 			return c.handler.Handle(req)
 		})).Handle(r)
 
+		// retrieve the error in the context added
+		// by the recoverer middleware.
 		if err == nil {
 			err = GetError(r)
 		}
 	}()
 
 	select {
+	// timeout done, we have to cancel the task.
 	case <-timeout.Done():
 		c.logger.Debug(ctx, "Task canceled by timeout", logging.Object("task", task))
 		err = ErrTaskCanceled
@@ -85,7 +96,12 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 	return nil
 }
 
+// handleError can be called twice since it's called inside Handle
+// and in handleRequest.
 func (c *consumer) handleError(ctx context.Context, task *Task, err error) error {
+	// Why do we have to call it twice?
+	// A panicking task should be marked as failed, when it's panicking
+	// the first handleError is skipped.
 	if task.IsStatusProcessing() == false {
 		return nil
 	}
