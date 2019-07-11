@@ -62,14 +62,14 @@ func init() {
 // process, and where the last number is an atomically incremented request
 // counter.
 
-func RequestID(next bokchoy.Subscriber) bokchoy.Subscriber {
-	return bokchoy.SubscriberFunc(func(r *bokchoy.Request) error {
+func RequestID(next bokchoy.Handler) bokchoy.Handler {
+	return bokchoy.HandlerFunc(func(r *bokchoy.Request) error {
 		ctx := r.Context()
 		myid := atomic.AddUint64(&reqid, 1)
 		requestID := fmt.Sprintf("%s-%06d", prefix, myid)
 		ctx = context.WithValue(ctx, RequestIDKey, requestID)
 
-		next.Consume(r.WithContext(ctx))
+		next.Handle(r.WithContext(ctx))
 
 		return nil
 	})

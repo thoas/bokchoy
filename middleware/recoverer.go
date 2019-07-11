@@ -5,11 +5,14 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/pkg/errors"
 	"github.com/thoas/bokchoy"
 )
 
-func Recoverer(next bokchoy.Subscriber) bokchoy.Subscriber {
-	return bokchoy.SubscriberFunc(func(r *bokchoy.Request) error {
+func Recoverer(next bokchoy.Handler) bokchoy.Handler {
+	return bokchoy.HandlerFunc(func(r *bokchoy.Request) error {
+		var err error
+
 		defer func() {
 			if rvr := recover(); rvr != nil {
 				logEntry := GetLogEntry(r)
@@ -19,11 +22,18 @@ func Recoverer(next bokchoy.Subscriber) bokchoy.Subscriber {
 					fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
 					debug.PrintStack()
 				}
+
+				var ok bool
+				if err, ok = rvr.(error); !ok {
+					err = fmt.Errorf("%v", err)
+				}
+
+				err = errors.WithStack(err)
 			}
 		}()
 
-		next.Consume(r)
+		next.Handle(r)
 
-		return nil
+		return err
 	})
 }

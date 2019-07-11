@@ -21,8 +21,8 @@ var (
 )
 
 // RequestLogger returns a logger handler using a custom LogFormatter.
-func RequestLogger(f LogFormatter) func(next bokchoy.Subscriber) bokchoy.Subscriber {
-	return func(next bokchoy.Subscriber) bokchoy.Subscriber {
+func RequestLogger(f LogFormatter) func(next bokchoy.Handler) bokchoy.Handler {
+	return func(next bokchoy.Handler) bokchoy.Handler {
 		fn := func(r *bokchoy.Request) error {
 			entry := f.NewLogEntry(r)
 
@@ -31,11 +31,11 @@ func RequestLogger(f LogFormatter) func(next bokchoy.Subscriber) bokchoy.Subscri
 				entry.Write(r, time.Since(t1))
 			}()
 
-			next.Consume(WithLogEntry(r, entry))
+			next.Handle(WithLogEntry(r, entry))
 
 			return nil
 		}
-		return bokchoy.SubscriberFunc(fn)
+		return bokchoy.HandlerFunc(fn)
 	}
 }
 
@@ -113,6 +113,8 @@ func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
 		cW(l.buf, l.useColor, bBlue, "%s", task.StatusDisplay())
 	case task.IsStatusSucceeded():
 		cW(l.buf, l.useColor, bGreen, "%s", task.StatusDisplay())
+	case task.IsStatusCanceled():
+		cW(l.buf, l.useColor, bYellow, "%s", task.StatusDisplay())
 	case task.IsStatusFailed():
 		cW(l.buf, l.useColor, bRed, "%s", task.StatusDisplay())
 	}

@@ -30,67 +30,67 @@ type Queue struct {
 	consumers      []*consumer
 	defaultOptions *Options
 	wg             *sync.WaitGroup
-	middlewares    []func(Subscriber) Subscriber
-	onFailure      []Subscriber
-	onSuccess      []Subscriber
-	onComplete     []Subscriber
-	onStart        []Subscriber
+	middlewares    []func(Handler) Handler
+	onFailure      []Handler
+	onSuccess      []Handler
+	onComplete     []Handler
+	onStart        []Handler
 }
 
-// Use appends a new subscriber middleware to the queue.
-func (q *Queue) Use(sub ...func(Subscriber) Subscriber) *Queue {
+// Use appends a new handler middleware to the queue.
+func (q *Queue) Use(sub ...func(Handler) Handler) *Queue {
 	q.middlewares = append(q.middlewares, sub...)
 
 	return q
 }
 
-// OnStart registers a new subscriber to be executed when a task is started.
-func (q *Queue) OnStart(sub Subscriber) *Queue {
-	q.OnStartFunc(sub.Consume)
+// OnStart registers a new handler to be executed when a task is started.
+func (q *Queue) OnStart(sub Handler) *Queue {
+	q.OnStartFunc(sub.Handle)
 
 	return q
 }
 
-// OnStartFunc registers a new subscriber function to be executed when a task is started.
-func (q *Queue) OnStartFunc(f SubscriberFunc) *Queue {
+// OnStartFunc registers a new handler function to be executed when a task is started.
+func (q *Queue) OnStartFunc(f HandlerFunc) *Queue {
 	q.onStart = append(q.onStart, f)
 
 	return q
 }
 
-// OnComplete registers a new subscriber to be executed when a task is completed.
-func (q *Queue) OnComplete(sub Subscriber) *Queue {
-	q.OnCompleteFunc(sub.Consume)
+// OnComplete registers a new handler to be executed when a task is completed.
+func (q *Queue) OnComplete(sub Handler) *Queue {
+	q.OnCompleteFunc(sub.Handle)
 
 	return q
 }
 
-// OnCompleteFunc registers a new subscriber function to be executed when a task is completed.
-func (q *Queue) OnCompleteFunc(f SubscriberFunc) *Queue {
+// OnCompleteFunc registers a new handler function to be executed when a task is completed.
+func (q *Queue) OnCompleteFunc(f HandlerFunc) *Queue {
 	q.onComplete = append(q.onComplete, f)
 
 	return q
 }
 
-// OnFailure registers a new subscriber to be executed when a task is failed.
-func (q *Queue) OnFailure(sub Subscriber) *Queue {
-	return q.OnFailureFunc(sub.Consume)
+// OnFailure registers a new handler to be executed when a task is failed.
+func (q *Queue) OnFailure(sub Handler) *Queue {
+	return q.OnFailureFunc(sub.Handle)
 }
 
-// OnFailureFunc registers a new subscriber function to be executed when a task is failed.
-func (q *Queue) OnFailureFunc(f SubscriberFunc) *Queue {
+// OnFailureFunc registers a new handler function to be executed when a task is failed.
+func (q *Queue) OnFailureFunc(f HandlerFunc) *Queue {
 	q.onFailure = append(q.onFailure, f)
 
 	return q
 }
 
-// OnSuccess registers a new subscriber to be executed when a task is succeeded.
-func (q *Queue) OnSuccess(sub Subscriber) *Queue {
-	return q.OnSuccessFunc(sub.Consume)
+// OnSuccess registers a new handler to be executed when a task is succeeded.
+func (q *Queue) OnSuccess(sub Handler) *Queue {
+	return q.OnSuccessFunc(sub.Handle)
 }
 
-// OnSuccessFunc registers a new subscriber function to be executed when a task is succeeded.
-func (q *Queue) OnSuccessFunc(f SubscriberFunc) *Queue {
+// OnSuccessFunc registers a new handler function to be executed when a task is succeeded.
+func (q *Queue) OnSuccessFunc(f HandlerFunc) *Queue {
 	q.onSuccess = append(q.onSuccess, f)
 
 	return q
@@ -106,13 +106,13 @@ func (q Queue) DelayName() string {
 	return fmt.Sprintf("%s:delay", q.name)
 }
 
-// Subscribe registers a new subscriber to consume tasks.
-func (q *Queue) Subscribe(sub Subscriber, options ...Option) *Queue {
-	return q.SubscribeFunc(sub.Consume)
+// Handle registers a new handler to consume tasks.
+func (q *Queue) Handle(sub Handler, options ...Option) *Queue {
+	return q.HandleFunc(sub.Handle)
 }
 
-// SubscribeFunc registers a new subscriber function to consume tasks.
-func (q *Queue) SubscribeFunc(f SubscriberFunc, options ...Option) *Queue {
+// HandleFunc registers a new handler function to consume tasks.
+func (q *Queue) HandleFunc(f HandlerFunc, options ...Option) *Queue {
 	opts := q.defaultOptions
 
 	if len(options) > 0 {
@@ -339,7 +339,7 @@ func (q *Queue) fireEvents(r *Request) error {
 
 	if task.IsStatusProcessing() {
 		for i := range q.onStart {
-			err := q.onStart[i].Consume(r)
+			err := q.onStart[i].Handle(r)
 			if err != nil {
 				return errors.Wrapf(err, "unable to handle onStart %s", r)
 			}
@@ -348,7 +348,7 @@ func (q *Queue) fireEvents(r *Request) error {
 
 	if task.IsStatusSucceeded() {
 		for i := range q.onSuccess {
-			err := q.onSuccess[i].Consume(r)
+			err := q.onSuccess[i].Handle(r)
 			if err != nil {
 				return errors.Wrapf(err, "unable to handle onSuccess %s", r)
 			}
@@ -357,7 +357,7 @@ func (q *Queue) fireEvents(r *Request) error {
 
 	if task.IsStatusFailed() || task.IsStatusCanceled() {
 		for i := range q.onFailure {
-			err := q.onFailure[i].Consume(r)
+			err := q.onFailure[i].Handle(r)
 			if err != nil {
 				return errors.Wrapf(err, "unable to handle onFailure %s", r)
 			}
@@ -366,7 +366,7 @@ func (q *Queue) fireEvents(r *Request) error {
 
 	if task.Finished() {
 		for i := range q.onComplete {
-			err := q.onComplete[i].Consume(r)
+			err := q.onComplete[i].Handle(r)
 			if err != nil {
 				return errors.Wrapf(err, "unable to handle onComplete %s", task)
 			}
@@ -381,7 +381,7 @@ func (q *Queue) fireEvents(r *Request) error {
 func (q *Queue) HandleRequest(ctx context.Context, r *Request) error {
 	consumer := q.Consumer()
 
-	return consumer.Consume(r)
+	return consumer.Handle(r)
 }
 
 // Save saves a task to the queue.

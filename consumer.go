@@ -12,8 +12,8 @@ import (
 
 type consumer struct {
 	name        string
-	handler     Subscriber
-	middlewares []func(Subscriber) Subscriber
+	handler     Handler
+	middlewares []func(Handler) Handler
 	queue       *Queue
 	serializer  Serializer
 	logger      logging.Logger
@@ -51,14 +51,16 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 	conn := make(chan result)
 
 	go func() {
-		err = chain(c.middlewares, c.handler).Consume(r)
-		if err != nil {
+		defer func() {
 			conn <- result{
 				err: err,
 			}
-		}
+		}()
 
-		conn <- result{}
+		middlewares := c.middlewares
+		middlewares = append(middlewares, c.handleError)
+
+		err = chain(middlewares, c.handler).Handle(r)
 	}()
 
 	select {
@@ -76,53 +78,64 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 	return nil
 }
 
-func (c *consumer) handleError(ctx context.Context, task *Task, err error) error {
-	if err == nil {
-		task.MarkAsSucceeded()
+func (c *consumer) handleError(next Handler) Handler {
+	return HandlerFunc(func(req *Request) error {
+		var (
+			ctx  = req.Context()
+			task = req.Task
+		)
 
-		c.logger.Debug(ctx, "Task marked as succeeded", logging.Object("task", task))
+		err := next.Handle(req)
 
-		err = c.queue.Save(ctx, task)
+		if err == nil {
+			task.MarkAsSucceeded()
+
+			c.logger.Debug(ctx, "Task marked as succeeded", logging.Object("task", task))
+
+			err = c.queue.Save(ctx, task)
+			if err != nil {
+				return errors.Wrapf(err, "unable to handle error %s", task)
+			}
+
+			return nil
+		}
+
+		if errors.Cause(err) == ErrTaskCanceled {
+			task.MarkAsCanceled()
+
+			c.logger.Debug(ctx, "Task canceled by timeout", logging.Object("task", task))
+		} else {
+			task.MarkAsFailed(err)
+		}
+
+		if task.MaxRetries == 0 {
+			c.logger.Debug(ctx, "Task marked as failed: no retry", logging.Object("task", task))
+
+			err = c.queue.Save(ctx, task)
+			if err != nil {
+				return errors.Wrapf(err, "unable to handle error %s", task)
+			}
+
+			return nil
+		}
+
+		task.MaxRetries -= 1
+		task.ETA = task.RetryETA()
+
+		c.logger.Debug(ctx, fmt.Sprintf("Task marked as failed: retrying in %s...", task.ETADisplay()),
+			logging.Object("task", task))
+
+		err = c.queue.PublishTask(ctx, task)
+
 		if err != nil {
 			return errors.Wrapf(err, "unable to handle error %s", task)
 		}
 
 		return nil
-	}
-
-	if err == ErrTaskCanceled {
-		task.MarkAsCanceled()
-	} else {
-		task.MarkAsFailed(err)
-	}
-
-	if task.MaxRetries == 0 {
-		c.logger.Debug(ctx, "Task marked as failed: no retry", logging.Object("task", task))
-
-		err = c.queue.Save(ctx, task)
-		if err != nil {
-			return errors.Wrapf(err, "unable to handle error %s", task)
-		}
-
-		return nil
-	}
-
-	task.MaxRetries -= 1
-	task.ETA = task.RetryETA()
-
-	c.logger.Debug(ctx, fmt.Sprintf("Task marked as failed: retrying in %s...", task.ETADisplay()),
-		logging.Object("task", task))
-
-	err = c.queue.PublishTask(ctx, task)
-
-	if err != nil {
-		return errors.Wrapf(err, "unable to handle error %s", task)
-	}
-
-	return nil
+	})
 }
 
-func (c *consumer) Consume(r *Request) error {
+func (c *consumer) Handle(r *Request) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -150,8 +163,6 @@ func (c *consumer) Consume(r *Request) error {
 		c.queue.fireEvents(r)
 
 		err = c.handleTask(ctx, r)
-
-		err = c.handleError(ctx, task, err)
 		if err != nil {
 			return err
 		}
@@ -200,7 +211,7 @@ func (c *consumer) consume(ctx context.Context) {
 				task := tasks[i]
 
 				req := &Request{Task: task}
-				err = c.Consume(req)
+				err = c.Handle(req)
 				if err != nil {
 					c.tracer.Log(ctx, "Receive error when handling", err)
 				}

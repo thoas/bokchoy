@@ -13,7 +13,7 @@ func TestQueue_Consumer(t *testing.T) {
 	run(t, func(t *testing.T, s *suite) {
 		is := assert.New(t)
 		queue := s.bokchoy.Queue("tests.task.message")
-		queue.SubscribeFunc(func(r *bokchoy.Request) error {
+		queue.HandleFunc(func(r *bokchoy.Request) error {
 			return nil
 		})
 		is.NotZero(queue.Consumer())
@@ -100,7 +100,7 @@ type consumer struct {
 	ticker chan struct{}
 }
 
-func (c consumer) Consume(r *bokchoy.Request) error {
+func (c consumer) Handle(r *bokchoy.Request) error {
 	c.ticker <- struct{}{}
 
 	return nil
@@ -117,7 +117,7 @@ func TestQueue_ConsumeDelayed(t *testing.T) {
 
 		queueName := "tests.task.message"
 
-		s.bokchoy.Subscribe(queueName, consumer)
+		s.bokchoy.Handle(queueName, consumer)
 
 		go func() {
 			err := s.bokchoy.Run(ctx)

@@ -14,7 +14,7 @@ type noopconsumer struct {
 	ticker chan struct{}
 }
 
-func (c noopconsumer) Consume(r *bokchoy.Request) error {
+func (c noopconsumer) Handle(r *bokchoy.Request) error {
 	return nil
 }
 
@@ -27,7 +27,7 @@ func TestConsumer_Consume(t *testing.T) {
 		ticker := make(chan struct{})
 
 		ctx := context.Background()
-		queue.SubscribeFunc(func(r *bokchoy.Request) error {
+		queue.HandleFunc(func(r *bokchoy.Request) error {
 			time.Sleep(time.Millisecond * 500)
 
 			r.Task.Result = r.Task.Payload
@@ -82,7 +82,7 @@ func TestConsumer_ConsumeRetries(t *testing.T) {
 		ticker := make(chan struct{}, maxRetries)
 
 		ctx := context.Background()
-		queue.SubscribeFunc(func(r *bokchoy.Request) error {
+		queue.HandleFunc(func(r *bokchoy.Request) error {
 			maxRetries--
 
 			ticker <- struct{}{}
@@ -136,7 +136,7 @@ func TestConsumer_ConsumeLong(t *testing.T) {
 		queue := s.bokchoy.Queue("tests.task.long")
 
 		ctx := context.Background()
-		queue.SubscribeFunc(func(r *bokchoy.Request) error {
+		queue.HandleFunc(func(r *bokchoy.Request) error {
 			time.Sleep(3 * time.Second)
 
 			return nil

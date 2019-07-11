@@ -22,7 +22,7 @@ type Bokchoy struct {
 	defaultOptions *Options
 	broker         Broker
 	queues         map[string]*Queue
-	middlewares    []func(Subscriber) Subscriber
+	middlewares    []func(Handler) Handler
 }
 
 // New initializes a new Bokchoy instance.
@@ -80,7 +80,7 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 }
 
 // Use append a new middleware to the system.
-func (b *Bokchoy) Use(sub ...func(Subscriber) Subscriber) *Bokchoy {
+func (b *Bokchoy) Use(sub ...func(Handler) Handler) *Bokchoy {
 	b.middlewares = append(b.middlewares, sub...)
 
 	return b
@@ -181,12 +181,12 @@ func (b *Bokchoy) Publish(ctx context.Context, queueName string, payload interfa
 	return b.Queue(queueName).Publish(ctx, payload, options...)
 }
 
-// Subscribe registers a new subscriber to consume tasks for a queue.
-func (b *Bokchoy) Subscribe(queueName string, sub Subscriber, options ...Option) {
-	b.SubscribeFunc(queueName, sub.Consume)
+// Handle registers a new handler to consume tasks for a queue.
+func (b *Bokchoy) Handle(queueName string, sub Handler, options ...Option) {
+	b.HandleFunc(queueName, sub.Handle)
 }
 
-// SubscribeFunc registers a new subscriber function to consume tasks for a queue.
-func (b *Bokchoy) SubscribeFunc(queueName string, f SubscriberFunc, options ...Option) {
-	b.Queue(queueName).SubscribeFunc(f, options...)
+// HandleFunc registers a new handler function to consume tasks for a queue.
+func (b *Bokchoy) HandleFunc(queueName string, f HandlerFunc, options ...Option) {
+	b.Queue(queueName).HandleFunc(f, options...)
 }

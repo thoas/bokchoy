@@ -141,7 +141,7 @@ func main() {
 
 		log.Printf("%s published", task)
 	case "consume":
-		queueFail.SubscribeFunc(func(r *bokchoy.Request) error {
+		queueFail.HandleFunc(func(r *bokchoy.Request) error {
 			return fmt.Errorf("It should fail badly")
 		}, bokchoy.WithConcurrency(concurrency))
 
@@ -157,7 +157,7 @@ func main() {
 			return nil
 		})
 
-		queue.SubscribeFunc(func(r *bokchoy.Request) error {
+		queue.HandleFunc(func(r *bokchoy.Request) error {
 			var (
 				msg  message
 				task = r.Task

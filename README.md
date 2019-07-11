@@ -118,7 +118,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	engine.Queue("tasks.message").SubscribeFunc(func(r *bokchoy.Request) error {
+	engine.Queue("tasks.message").HandleFunc(func(r *bokchoy.Request) error {
 		fmt.Println("Receive request", r)
 		fmt.Println("Payload:", r.Task.Payload)
 
@@ -139,16 +139,16 @@ func main() {
 }
 ```
 
-A worker is defined by subscribers, to define a `Subscriber` you have to follow this interface:
+A worker is defined by handlers, to define a `Handler` you have to follow this interface:
 
 ```go
-type Subscriber interface {
-	Consume(*Request) error
+type Handler interface {
+	Handle(*Request) error
 }
 ```
 
-You can create your own struct which implements this interface or use the `SubscriberFunc` to
-generate a `Subscriber` from your function.
+You can create your own struct which implements this interface or use the `HandlerFunc` to
+generate a `Handler` from your function.
 
 See [worker](examples/worker) directory for more information and to run it.
 
@@ -245,7 +245,7 @@ By default the worker concurrency is set to `1`, you can override it based on yo
 capability, Bokchoy will spawn multiple goroutines to handle your tasks.
 
 ```go
-engine.Queue("tasks.message").SubscribeFunc(func(r *bokchoy.Request) error {
+engine.Queue("tasks.message").HandleFunc(func(r *bokchoy.Request) error {
     fmt.Println("Receive request", r)
     fmt.Println("Payload:", r.Task.Payload)
 
@@ -313,13 +313,13 @@ queue.OnFailureFunc(func(r *bokchoy.Request) error {
 
 ### Store results
 
-By default, if you don't mutate the task in the subscriber handler its result will be always `nil`.
+By default, if you don't mutate the task in the handler its result will be always `nil`.
 
 You can store a result in your task to keep it for later, for example: you might need statistics from a twitter profile
 to save them later.
 
 ```go
-queue.SubscribeFunc(func(r *bokchoy.Request) error {
+queue.HandleFunc(func(r *bokchoy.Request) error {
 	r.Task.Result = map[string]string{"result": "wow!"}
 
 	return nil
@@ -400,6 +400,7 @@ they share the same purpose to follow the lifecycle of a Bokchoy request.
 | Logger                | Logs the start and end of each request with the elapsed processing time         |
 | Recoverer             | Gracefully absorb panics and prints the stack trace                             |
 | RequestID             | Injects a request ID into the context of each request                           |
+| Timeout               | Signals to the request context when the timeout deadline is reached             |
 -----------------------------------------------------------------------------------------------------------
 
 See [middleware](middleware) directory for more information.
