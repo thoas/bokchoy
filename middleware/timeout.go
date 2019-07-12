@@ -43,9 +43,7 @@ func Timeout(timeout time.Duration) func(next bokchoy.Handler) bokchoy.Handler {
 				err = ctx.Err()
 			}()
 
-			r = r.WithContext(ctx)
-
-			next.Handle(r)
+			next.Handle(r.WithContext(ctx))
 
 			return err
 		}

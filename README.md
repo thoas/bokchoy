@@ -270,13 +270,16 @@ bokchoy.WithRetryIntervals([]time.Duration{
 
 ### Timeout
 
-By default a task will be forced to timeout if its running time exceed `180 seconds`.
+By default a task will be forced to timeout and marked as `canceled` if its running time exceed `180 seconds`.
 
 You can customize this globally or when publishing a new task by using `bokchoy.WithTimeout` option:
 
 ```go
 bokchoy.WithTimeout(5*time.Second)
 ```
+
+The worker will regain control and process the next task but be careful, each task is running
+in a goroutine so you have to cancel your task at some point or it will be leaking.
 
 ### Catch events
 

@@ -108,7 +108,7 @@ func (q Queue) DelayName() string {
 
 // Handle registers a new handler to consume tasks.
 func (q *Queue) Handle(sub Handler, options ...Option) *Queue {
-	return q.HandleFunc(sub.Handle)
+	return q.HandleFunc(sub.Handle, options...)
 }
 
 // HandleFunc registers a new handler function to consume tasks.
