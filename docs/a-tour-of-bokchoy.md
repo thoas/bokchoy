@@ -1,8 +1,5 @@
 # A Tour of Bokchoy, a simple job queues for Go backed by Redis
 
-We will review features from Bokchoy to adapt it to our need
-around an application example.
-
 Bokchoy is a simple Go library for queueing tasks and processing them in the background with workers.
 It can be used in multiple cases: crawling third party APIs, slow processes, compute, analysis, etc. 
 
@@ -12,11 +9,13 @@ To demonstrate each feature, we will create a minimalist and dumb web crawler
 inspired by the one found in [A Tour of Go](https://tour.golang.org/concurrency/10)
 with Bokchoy, links will be distributed around multiple servers.
 
+TL;DR: the complete application can be found [here](../examples/crawler)
+
 ## Overview
 
 We will start small and go deeper and deeper, to crawl a website we need:
 
-* An base URL to start crawling
+* A base URL to start crawling
 * A `depth` parameter to stop the crawler when it's too deep
 * An urls collector to extract urls from a webpage and propagate them to subtasks
 * A common storage to list all urls found and theirs statuses
