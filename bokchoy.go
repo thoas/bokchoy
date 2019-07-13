@@ -42,7 +42,8 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 		logger = opts.Logger
 	}
 
-	if opts.Tracer == nil {
+	tracer = opts.Tracer
+	if tracer == nil {
 		tracer = NewTracerLogger(logger)
 	}
 

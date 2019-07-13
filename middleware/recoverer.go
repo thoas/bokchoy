@@ -32,7 +32,9 @@ func Recoverer(next bokchoy.Handler) bokchoy.Handler {
 					err = fmt.Errorf("%v", rvr)
 				}
 
-				*r = *bokchoy.WithError(r, errors.WithStack(err))
+				ctx := bokchoy.WithContextError(r.Context(), errors.WithStack(err))
+
+				*r = *r.WithContext(ctx)
 			}
 		}()
 

@@ -76,7 +76,7 @@ func (c *consumer) handleTask(ctx context.Context, r *Request) error {
 		// retrieve the error in the context added
 		// by the recoverer middleware.
 		if err == nil {
-			err = GetError(r)
+			err = GetContextError(r.Context())
 		}
 	}()
 
@@ -118,6 +118,8 @@ func (c *consumer) handleError(ctx context.Context, task *Task, err error) error
 
 		return nil
 	}
+
+	c.tracer.Log(ctx, "Received an error when handling task", errors.Wrapf(err, "unable to handle task %s", task))
 
 	if errors.Cause(err) == ErrTaskCanceled {
 		task.MarkAsCanceled()
@@ -198,7 +200,7 @@ func (c *consumer) Handle(r *Request) error {
 			return err
 		}
 
-		funcs := GetAfterRequestFuncs(r)
+		funcs := GetContextAfterRequestFuncs(r.Context())
 		for i := range funcs {
 			funcs[i]()
 		}
@@ -247,7 +249,7 @@ func (c *consumer) consume(ctx context.Context) {
 				task := tasks[i]
 
 				req := &Request{Task: task}
-				err = c.Handle(req)
+				err = c.Handle(req.WithContext(WithContextTask(req.Context(), task)))
 				if err != nil {
 					c.tracer.Log(ctx, "Receive error when handling", err)
 				}
