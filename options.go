@@ -18,6 +18,7 @@ type Options struct {
 	RetryIntervals []time.Duration
 	Serializer     Serializer
 	Initialize     bool
+	Queues         []string
 }
 
 func newOptions() *Options {
@@ -41,6 +42,13 @@ func newOptions() *Options {
 
 // Option is an option unit.
 type Option func(opts *Options)
+
+// WithQueues allows to override queues to run.
+func WithQueues(queues []string) Option {
+	return func(opts *Options) {
+		opts.Queues = queues
+	}
+}
 
 // WithSerializer defines the Serializer.
 func WithSerializer(serializer Serializer) Option {

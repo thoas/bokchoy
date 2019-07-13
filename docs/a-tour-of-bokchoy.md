@@ -412,6 +412,8 @@ type Tracer interface {
 }
 ```
 
+A tracer implementation with sentry can be found [here](../examples/crawler/sentry).
+
 ### Catch failure events
 
 Bokchoy has an internal event listener system to catch the state of the task during its lifecycle.

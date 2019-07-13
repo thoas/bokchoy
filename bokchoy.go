@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/thoas/bokchoy/logging"
+	"github.com/thoas/go-funk"
 
 	"github.com/pkg/errors"
 )
@@ -152,19 +153,41 @@ func (b *Bokchoy) QueueNames() []string {
 }
 
 // Run runs the system and block the current goroutine.
-func (b *Bokchoy) Run(ctx context.Context) error {
+func (b *Bokchoy) Run(ctx context.Context, options ...Option) error {
+	opts := newOptions()
+	for i := range options {
+		options[i](opts)
+	}
+
 	err := b.broker.Ping()
 	if err != nil {
 		return err
 	}
 
+	queueNames := b.QueueNames()
+	if len(opts.Queues) > 0 {
+		queueNames = funk.FilterString(queueNames, func(queueName string) bool {
+			return funk.InStrings(opts.Queues, queueName)
+		})
+	}
+
+	if len(queueNames) == 0 {
+		b.logger.Debug(ctx, "No queue to run...")
+
+		return ErrNoQueueToRun
+	}
+
 	fields := []logging.Field{
-		logging.String("queues", strings.Join(b.QueueNames(), ",")),
+		logging.String("queues", strings.Join(queueNames, ",")),
 	}
 
 	b.logger.Debug(ctx, "Starting queues...", fields...)
 
 	for i := range b.queues {
+		if !funk.InStrings(queueNames, b.queues[i].Name()) {
+			continue
+		}
+
 		b.queues[i].start(ctx)
 	}
 

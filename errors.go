@@ -11,4 +11,7 @@ var (
 
 	// ErrTaskNotFound is returned when a task is not found.
 	ErrTaskNotFound = fmt.Errorf("Task not found")
+
+	// ErrNoQueueToRun is returned when no queue has been found to run.
+	ErrNoQueueToRun = fmt.Errorf("No queue to run")
 )
