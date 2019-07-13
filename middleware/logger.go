@@ -93,7 +93,7 @@ func (l *DefaultLogFormatter) NewLogEntry(r *bokchoy.Request) LogEntry {
 
 	task := r.Task
 
-	cW(entry.buf, useColor, bMagenta, "<Task id=%s name=%s payload=%s>", task.ID, task.Name, task.Payload)
+	cW(entry.buf, useColor, bMagenta, "<Task id=%s name=%s payload=%v>", task.ID, task.Name, task.Payload)
 	entry.buf.WriteString(" - ")
 
 	return entry

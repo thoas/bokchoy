@@ -713,52 +713,48 @@ func (h *crawlHandler) Handle(r *bokchoy.Request) error {
 It's time to test the complete workflow by running the producer again:
 
 ```console
-$ go run docs/main.go -run producer -url https://golang.org/
+$ go run docs/main.go -run producer -url https://golang.org
 ```
 
 Then the worker:
 
 ```console
 $ go run docs/main.go -run worker
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org/ depth=1>
-2019/07/12 21:01:36 Crawled https://golang.org/ - [200 OK]
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8FPM8TWAPEX9QAAXY4, status=waiting, published_at=2019-07-12 19:01:36.655144 +0000 UTC> published
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8FZ6MF4TXANQKFMS35, status=waiting, published_at=2019-07-12 19:01:36.655463 +0000 UTC> published
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8FX519RD0EDSE3VHAY, status=waiting, published_at=2019-07-12 19:01:36.655681 +0000 UTC> published
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org// depth=0>
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org//doc/ depth=0>
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8F9M8TF0CMAGY88ET2, status=waiting, published_at=2019-07-12 19:01:36.655912 +0000 UTC> published
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org//pkg/ depth=0>
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8G63R4A7C2S6PCEX1F, status=waiting, published_at=2019-07-12 19:01:36.656293 +0000 UTC> published
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8G0Z35WFV7GV1ZKJ22, status=waiting, published_at=2019-07-12 19:01:36.656514 +0000 UTC> published
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org//project/ depth=0>
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8GV425JKY32VDJYJ81, status=waiting, published_at=2019-07-12 19:01:36.65671 +0000 UTC> published
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8GD1M22JRRCC567NE3, status=waiting, published_at=2019-07-12 19:01:36.656891 +0000 UTC> published
-2019/07/12 21:01:36 <Task name=tasks.crawl id=01DFKRZT8HJHTBDX5SKT2RV1X2, status=waiting, published_at=2019-07-12 19:01:36.657065 +0000 UTC> published
-2019/07/12 21:01:36 <Task id=01DFKRZGYSWWFB9WTHMRN9HCZC name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=1) url:https://golang.org/]> - succeeded - result: (empty) in 489.316517ms
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org//doc/tos.html depth=0>
-2019/07/12 21:01:36 Crawled https://golang.org// - [200 OK]
-2019/07/12 21:01:36 <Task id=01DFKRZT8FPM8TWAPEX9QAAXY4 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//]> - succeeded - result: (empty) in 290.927216ms
-2019/07/12 21:01:36 Received <Crawl url=https://golang.org//doc/copyright.html depth=0>
-2019/07/12 21:01:37 Crawled https://golang.org//pkg/ - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8FX519RD0EDSE3VHAY name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//pkg/]> - succeeded - result: (empty) in 432.465692ms
-2019/07/12 21:01:37 Received <Crawl url=https://golang.org//dl/ depth=0>
-2019/07/12 21:01:37 Crawled https://golang.org//doc/ - [200 OK]
-2019/07/12 21:01:37 Crawled https://golang.org//project/ - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8FZ6MF4TXANQKFMS35 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//doc/]> - succeeded - result: (empty) in 434.024445ms
-2019/07/12 21:01:37 <Task id=01DFKRZT8F9M8TF0CMAGY88ET2 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//project/]> - succeeded - result: (empty) in 433.576888ms
-2019/07/12 21:01:37 Received <Crawl url=https://golang.org//blog/ depth=0>
-2019/07/12 21:01:37 Received <Crawl url=https://golang.org//help/ depth=0>
-2019/07/12 21:01:37 Crawled https://golang.org//doc/tos.html - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8HJHTBDX5SKT2RV1X2 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//doc/tos.html]> - succeeded - result: (empty) in 593.583668ms
-2019/07/12 21:01:37 Crawled https://golang.org//doc/copyright.html - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8GD1M22JRRCC567NE3 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//doc/copyright.html]> - succeeded - result: (empty) in 466.377015ms
-2019/07/12 21:01:37 Crawled https://golang.org//dl/ - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8GV425JKY32VDJYJ81 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//dl/]> - succeeded - result: (empty) in 435.876135ms
-2019/07/12 21:01:37 Crawled https://golang.org//help/ - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8G63R4A7C2S6PCEX1F name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//help/]> - succeeded - result: (empty) in 438.84859ms
-2019/07/12 21:01:37 Crawled https://golang.org//blog/ - [200 OK]
-2019/07/12 21:01:37 <Task id=01DFKRZT8G0Z35WFV7GV1ZKJ22 name=tasks.crawl payload=map[BaseURL:https://golang.org/ depth:%!s(float64=0) url:https://golang.org//blog/]> - succeeded - result: (empty) in 689.867658ms
+2019/07/13 08:56:24 Received <Crawl url=https://golang.org depth=1>
+2019/07/13 08:56:25 Crawled https://golang.org - [200 OK]
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSM3Z6KVT2606EPJXJ7, status=waiting, published_at=2019-07-13 06:56:25.396333 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSMQ7CDZ4YW96BP2EPA, status=waiting, published_at=2019-07-13 06:56:25.396695 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSMA1PZY59WWB2DMMA0, status=waiting, published_at=2019-07-13 06:56:25.396982 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSNS69CT2BP1N0VQWZM, status=waiting, published_at=2019-07-13 06:56:25.397227 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSNNFRHPFBEESPKNNZV, status=waiting, published_at=2019-07-13 06:56:25.397478 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSN045VBNY0F45BNWFP, status=waiting, published_at=2019-07-13 06:56:25.397722 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSNT80ARY5273DKG4JB, status=waiting, published_at=2019-07-13 06:56:25.397971 +0000 UTC> published
+2019/07/13 08:56:25 <Task name=tasks.crawl id=01DFN1WNSP7GDNZ7DGFSPGC6ET, status=waiting, published_at=2019-07-13 06:56:25.398199 +0000 UTC> published
+2019/07/13 08:56:25 <Task id=01DFN1WKNDN7ZAHHJDFVN8YSVV name=tasks.crawl payload=map[BaseURL:https://golang.org depth:1 url:https://golang.org]> - succeeded - result: (empty) in 445.079628ms
+2019/07/13 08:56:25 Received <Crawl url=https://golang.org/doc/tos.html depth=0>
+2019/07/13 08:56:25 Crawled https://golang.org/doc/tos.html - [200 OK]
+2019/07/13 08:56:25 <Task id=01DFN1WNSP7GDNZ7DGFSPGC6ET name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/doc/tos.html]> - succeeded - result: (empty) in 137.121649ms
+2019/07/13 08:56:25 Received <Crawl url=https://golang.org/doc/copyright.html depth=0>
+2019/07/13 08:56:25 Crawled https://golang.org/doc/copyright.html - [200 OK]
+2019/07/13 08:56:25 <Task id=01DFN1WNSNT80ARY5273DKG4JB name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/doc/copyright.html]> - succeeded - result: (empty) in 294.807462ms
+2019/07/13 08:56:25 Received <Crawl url=https://golang.org/dl depth=0>
+2019/07/13 08:56:26 Crawled https://golang.org/dl - [200 OK]
+2019/07/13 08:56:26 <Task id=01DFN1WNSN045VBNY0F45BNWFP name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/dl]> - succeeded - result: (empty) in 1.051028215s
+2019/07/13 08:56:26 Received <Crawl url=https://golang.org/blog depth=0>
+2019/07/13 08:56:27 Crawled https://golang.org/blog - [200 OK]
+2019/07/13 08:56:27 <Task id=01DFN1WNSNNFRHPFBEESPKNNZV name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/blog]> - succeeded - result: (empty) in 813.442227ms
+2019/07/13 08:56:27 Received <Crawl url=https://golang.org/help depth=0>
+2019/07/13 08:56:28 Crawled https://golang.org/help - [200 OK]
+2019/07/13 08:56:28 <Task id=01DFN1WNSNS69CT2BP1N0VQWZM name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/help]> - succeeded - result: (empty) in 721.972494ms
+2019/07/13 08:56:28 Received <Crawl url=https://golang.org/project depth=0>
+2019/07/13 08:56:28 Crawled https://golang.org/project - [200 OK]
+2019/07/13 08:56:28 <Task id=01DFN1WNSMA1PZY59WWB2DMMA0 name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/project]> - succeeded - result: (empty) in 411.728612ms
+2019/07/13 08:56:28 Received <Crawl url=https://golang.org/pkg depth=0>
+2019/07/13 08:56:29 Crawled https://golang.org/pkg - [200 OK]
+2019/07/13 08:56:29 <Task id=01DFN1WNSMQ7CDZ4YW96BP2EPA name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/pkg]> - succeeded - result: (empty) in 408.950376ms
+2019/07/13 08:56:29 Received <Crawl url=https://golang.org/doc depth=0>
+2019/07/13 08:56:29 Crawled https://golang.org/doc - [200 OK]
+2019/07/13 08:56:29 <Task id=01DFN1WNSM3Z6KVT2606EPJXJ7 name=tasks.crawl payload=map[BaseURL:https://golang.org depth:0 url:https://golang.org/doc]> - succeeded - result: (empty) in 367.4162ms
 ```
 
 It works like a charm, still a bit slow to crawl and it can be even slower with a higher `depth` value.
