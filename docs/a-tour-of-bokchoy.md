@@ -108,6 +108,8 @@ $ go run main.go -run producer -url {url} -depth {depth}
 Bokchoy is a complete engine which exposes queues to publish:
 
 ```go
+ctx := context.Background()
+
 bok, err := bokchoy.New(ctx, bokchoy.Config{
 	Broker: bokchoy.BrokerConfig{
 		Type: "redis",
@@ -163,7 +165,7 @@ case "producer":
 We can now test the producer by running:
 
 ```console
-$ go run main.go -run producer -url https://www.ulule.com
+$ go run main.go -run producer -url https://golang.org/
 2019/07/10 17:22:14 <Task name=tasks.crawl id=01DFE7MPKHA8YVF26PTC1RFSCV, status=waiting, published_at=2019-07-10 15:22:14.513543 +0000 UTC> published
 ```
 
@@ -237,7 +239,7 @@ Launch the worker:
 
 ```console
 $ go run docs/main.go -run worker
-2019/07/10 17:28:47 Received <Crawl url=https://fr.ulule.com depth=1>
+2019/07/10 17:28:47 Received <Crawl url=https://golang.org depth=1>
 ```
 
 ## Error handling
@@ -329,7 +331,7 @@ created by github.com/thoas/bokchoy.(*consumer).handleTask
 exit status 2
 ```
 
-The engine has to known which middleware to use:
+The engine has to know which middleware to use:
 
 ```go
 // ...
