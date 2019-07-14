@@ -7,23 +7,27 @@ import (
 )
 
 // DefaultTracer is the default tracer.
-var DefaultTracer = NewTracerLogger(logging.DefaultLogger)
+var DefaultTracer = NewLoggerTracer(logging.DefaultLogger)
 
 // Tracer is a component used to trace errors.
 type Tracer interface {
 	Log(context.Context, string, error)
 }
 
-// NewTracerLogger initializes a new Tracer instance.
-func NewTracerLogger(logger logging.Logger) Tracer {
-	return &tracerLogger{logger}
+// NewLoggerTracer initializes a new Tracer instance.
+func NewLoggerTracer(logger logging.Logger) Tracer {
+	return &loggerTracer{logger}
 }
 
-type tracerLogger struct {
+type loggerTracer struct {
 	logger logging.Logger
 }
 
+func (t loggerTracer) String() string {
+	return "logger"
+}
+
 // Log logs the error.
-func (t tracerLogger) Log(ctx context.Context, msg string, err error) {
+func (t loggerTracer) Log(ctx context.Context, msg string, err error) {
 	t.logger.Error(ctx, msg, logging.Error(err))
 }

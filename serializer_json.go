@@ -12,3 +12,7 @@ func (s JSONSerializer) Dumps(v interface{}) ([]byte, error) {
 func (s JSONSerializer) Loads(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
+
+func (s JSONSerializer) String() string {
+	return "json"
+}

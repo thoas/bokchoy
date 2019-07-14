@@ -241,10 +241,10 @@ func (t Task) MarshalLogObject(enc logging.ObjectEncoder) error {
 func (t Task) RetryIntervalsDisplay() string {
 	intervals := make([]string, len(t.RetryIntervals))
 	for i := range t.RetryIntervals {
-		intervals[i] = fmt.Sprintf("%d", int(t.RetryIntervals[i].Seconds()))
+		intervals[i] = fmt.Sprintf("%s", t.RetryIntervals[i])
 	}
 
-	return strings.Join(intervals, ",")
+	return strings.Join(intervals, ", ")
 }
 
 // String returns the string representation of Task.
@@ -330,7 +330,12 @@ func (t Task) Serialize(serializer Serializer) (map[string]interface{}, error) {
 	}
 
 	if len(t.RetryIntervals) > 0 {
-		data["retry_intervals"] = t.RetryIntervalsDisplay()
+		intervals := make([]string, len(t.RetryIntervals))
+		for i := range t.RetryIntervals {
+			intervals[i] = fmt.Sprintf("%d", int(t.RetryIntervals[i].Seconds()))
+		}
+
+		data["retry_intervals"] = strings.Join(intervals, ",")
 	}
 
 	return data, err

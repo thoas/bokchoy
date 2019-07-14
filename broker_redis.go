@@ -18,11 +18,12 @@ type redisClient interface {
 }
 
 type redisBroker struct {
-	cfg     RedisConfig
-	clt     redisClient
-	prefix  string
-	logger  logging.Logger
-	scripts map[string]string
+	clientType string
+	cfg        RedisConfig
+	clt        redisClient
+	prefix     string
+	logger     logging.Logger
+	scripts    map[string]string
 }
 
 const (
@@ -126,10 +127,15 @@ func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger)
 	}
 
 	return &redisBroker{
-		clt:    clt,
-		prefix: cfg.Prefix,
-		logger: logger,
+		clientType: cfg.Type,
+		clt:        clt,
+		prefix:     cfg.Prefix,
+		logger:     logger,
 	}
+}
+
+func (p redisBroker) String() string {
+	return fmt.Sprintf("redis (%s)", p.clientType)
 }
 
 // Initialize initializes the redis broker.

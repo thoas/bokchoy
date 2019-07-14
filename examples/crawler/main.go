@@ -106,9 +106,6 @@ func main() {
 		}()
 
 		// blocking operation, everything is done for you
-		err = bok.Run(ctx, bokchoy.WithQueues([]string{"tasks.message"}))
-		if err != nil {
-			log.Fatal(err)
-		}
+		bok.Run(ctx)
 	}
 }

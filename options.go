@@ -1,6 +1,8 @@
 package bokchoy
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/thoas/bokchoy/logging"
@@ -19,6 +21,17 @@ type Options struct {
 	Serializer     Serializer
 	Initialize     bool
 	Queues         []string
+	DisableOutput  bool
+}
+
+// RetryIntervalsDisplay returns a string representation of the retry intervals.
+func (o Options) RetryIntervalsDisplay() string {
+	intervals := make([]string, len(o.RetryIntervals))
+	for i := range o.RetryIntervals {
+		intervals[i] = fmt.Sprintf("%s", o.RetryIntervals[i])
+	}
+
+	return strings.Join(intervals, ", ")
 }
 
 func newOptions() *Options {
@@ -42,6 +55,14 @@ func newOptions() *Options {
 
 // Option is an option unit.
 type Option func(opts *Options)
+
+// WithDisableOutput defines if the output (logo, queues information)
+// should be disabled.
+func WithDisableOutput(disableOutput bool) Option {
+	return func(opts *Options) {
+		opts.DisableOutput = disableOutput
+	}
+}
 
 // WithQueues allows to override queues to run.
 func WithQueues(queues []string) Option {

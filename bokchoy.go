@@ -1,7 +1,12 @@
 package bokchoy
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"log"
+	"os"
+	"os/user"
 	"strings"
 	"sync"
 
@@ -45,7 +50,7 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 
 	tracer = opts.Tracer
 	if tracer == nil {
-		tracer = NewTracerLogger(logger)
+		tracer = NewLoggerTracer(logger)
 	}
 
 	bok := &Bokchoy{
@@ -154,12 +159,36 @@ func (b *Bokchoy) QueueNames() []string {
 
 // Run runs the system and block the current goroutine.
 func (b *Bokchoy) Run(ctx context.Context, options ...Option) error {
+	buf := &bytes.Buffer{}
+	ColorWrite(buf, true, ColorBrightGreen, "%s\n", logo)
+
 	opts := newOptions()
 	for i := range options {
 		options[i](opts)
 	}
 
-	err := b.broker.Ping()
+	user, err := user.Current()
+	if err == nil {
+		hostname, err := os.Hostname()
+		if err == nil {
+			ColorWrite(buf, true, ColorBrightBlue, "%s@%s %v\n", user.Username, hostname, Version)
+			ColorWrite(buf, true, ColorBrightBlue, "- uid: %s\n", user.Uid)
+			ColorWrite(buf, true, ColorBrightBlue, "- gid: %s\n\n", user.Gid)
+		}
+	}
+
+	ColorWrite(buf, true, ColorBrightBlue, "[config]\n")
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- concurrency: %d\n", b.defaultOptions.Concurrency))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- serializer: %s\n", b.serializer))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- max retries: %d\n", b.defaultOptions.MaxRetries))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- retry intervals: %s\n", b.defaultOptions.RetryIntervalsDisplay()))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- ttl: %s\n", b.defaultOptions.TTL))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- countdown: %s\n", b.defaultOptions.Countdown))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- timeout: %s\n", b.defaultOptions.Timeout))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- tracer: %s\n", b.tracer))
+	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- broker: %s\n", b.broker))
+
+	err = b.broker.Ping()
 	if err != nil {
 		return err
 	}
@@ -175,6 +204,16 @@ func (b *Bokchoy) Run(ctx context.Context, options ...Option) error {
 		b.logger.Debug(ctx, "No queue to run...")
 
 		return ErrNoQueueToRun
+	}
+
+	ColorWrite(buf, true, ColorBrightBlue, "\n[queues]\n")
+
+	for i := range queueNames {
+		ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- %s", queueNames[i]))
+	}
+
+	if !b.defaultOptions.DisableOutput {
+		log.Print(buf)
 	}
 
 	fields := []logging.Field{

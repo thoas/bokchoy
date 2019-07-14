@@ -90,12 +90,12 @@ func (l *DefaultLogFormatter) NewLogEntry(r *bokchoy.Request) LogEntry {
 
 	reqID := GetReqID(r.Context())
 	if reqID != "" {
-		cW(entry.buf, useColor, nYellow, "[%s] ", reqID)
+		bokchoy.ColorWrite(entry.buf, useColor, bokchoy.ColorYellow, "[%s] ", reqID)
 	}
 
 	task := r.Task
 
-	cW(entry.buf, useColor, bMagenta, "<Task id=%s name=%s payload=%v>", task.ID, task.Name, task.Payload)
+	bokchoy.ColorWrite(entry.buf, useColor, bokchoy.ColorBrightMagenta, "<Task id=%s name=%s payload=%v>", task.ID, task.Name, task.Payload)
 	entry.buf.WriteString(" - ")
 
 	return entry
@@ -113,30 +113,30 @@ func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
 
 	switch {
 	case task.IsStatusProcessing():
-		cW(l.buf, l.useColor, bBlue, "%s", task.StatusDisplay())
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightBlue, "%s", task.StatusDisplay())
 	case task.IsStatusSucceeded():
-		cW(l.buf, l.useColor, bGreen, "%s", task.StatusDisplay())
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightGreen, "%s", task.StatusDisplay())
 	case task.IsStatusCanceled():
-		cW(l.buf, l.useColor, bYellow, "%s", task.StatusDisplay())
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightYellow, "%s", task.StatusDisplay())
 	case task.IsStatusFailed():
-		cW(l.buf, l.useColor, bRed, "%s", task.StatusDisplay())
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightRed, "%s", task.StatusDisplay())
 	}
 
 	l.buf.WriteString(" - ")
 
 	if task.Result == nil {
-		cW(l.buf, l.useColor, bBlue, "result: (empty)")
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightBlue, "result: (empty)")
 	} else {
-		cW(l.buf, l.useColor, bBlue, "result: \"%s\"", task.Result)
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightBlue, "result: \"%s\"", task.Result)
 	}
 
 	l.buf.WriteString(" in ")
 	if elapsed < 500*time.Millisecond {
-		cW(l.buf, l.useColor, nGreen, "%s", elapsed)
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorGreen, "%s", elapsed)
 	} else if elapsed < 5*time.Second {
-		cW(l.buf, l.useColor, nYellow, "%s", elapsed)
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorYellow, "%s", elapsed)
 	} else {
-		cW(l.buf, l.useColor, nRed, "%s", elapsed)
+		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorRed, "%s", elapsed)
 	}
 
 	l.Logger.Print(l.buf.String())
@@ -144,7 +144,7 @@ func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
 
 func (l *defaultLogEntry) Panic(v interface{}, stack []byte) {
 	panicEntry := l.NewLogEntry(l.request).(*defaultLogEntry)
-	cW(panicEntry.buf, l.useColor, bRed, "panic: %+v", v)
+	bokchoy.ColorWrite(panicEntry.buf, l.useColor, bokchoy.ColorRed, "panic: %+v", v)
 	l.Logger.Print(panicEntry.buf.String())
 	l.Logger.Print(string(stack))
 }
