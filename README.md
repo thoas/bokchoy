@@ -13,6 +13,8 @@ It currently only supports [Redis](https://github.com/thoas/bokchoy/blob/master/
 (client, sentinel and cluster) with some Lua magic, but internally it relies on a generic
 broker implementation to extends it.
 
+![screen](https://d2aztkdj0ezvrk.cloudfront.net/items/392d0G1F3D2y1r2i0r1M/screen.gif)
+
 ## Motivation
 
 It's relatively easy to make a producer/receiver system in Go since the language contains builtins
