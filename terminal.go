@@ -52,11 +52,13 @@ func init() {
 	}
 }
 
-// colorWrite
+// ColorWrite writes an output to stdout.
+// nolint: errcheck
 func ColorWrite(w io.Writer, useColor bool, color []byte, s string, args ...interface{}) {
 	if isTTY && useColor {
 		w.Write(color)
 	}
+
 	fmt.Fprintf(w, s, args...)
 	if isTTY && useColor {
 		w.Write(ColorReset)

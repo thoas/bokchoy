@@ -241,7 +241,7 @@ func (t Task) MarshalLogObject(enc logging.ObjectEncoder) error {
 func (t Task) RetryIntervalsDisplay() string {
 	intervals := make([]string, len(t.RetryIntervals))
 	for i := range t.RetryIntervals {
-		intervals[i] = fmt.Sprintf("%s", t.RetryIntervals[i])
+		intervals[i] = t.RetryIntervals[i].String()
 	}
 
 	return strings.Join(intervals, ", ")

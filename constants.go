@@ -15,7 +15,7 @@ const (
 	defaultMaxRetries  = 3
 	defaultTTL         = 180 * time.Second
 
-	Version = "v0.1.0"
+	Version = "v0.2.0"
 )
 
 var defaultRetryIntervals = []time.Duration{

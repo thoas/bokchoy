@@ -30,7 +30,6 @@ const (
 	// Redis type
 	redisTypeSentinel = "sentinel"
 	redisTypeCluster  = "cluster"
-	redisTypeClient   = "client"
 )
 
 var redisScripts = map[string]string{
@@ -154,8 +153,6 @@ func (p *redisBroker) Initialize(ctx context.Context) error {
 
 		p.scripts[key] = sha
 	}
-
-	p.logger.Debug(ctx, fmt.Sprintf("connected to redis %s", p.cfg.Type))
 
 	return nil
 }
@@ -289,7 +286,7 @@ func (p *redisBroker) Count(queueName string) (int, error) {
 		return 0, nil
 	}
 
-	if res != nil && res.Err() != nil {
+	if res.Err() != nil {
 		return 0, errors.Wrapf(res.Err(), "unable to LEN %s", queueName)
 	}
 

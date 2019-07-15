@@ -11,7 +11,6 @@ import (
 )
 
 type noopconsumer struct {
-	ticker chan struct{}
 }
 
 func (c noopconsumer) Handle(r *bokchoy.Request) error {
@@ -71,6 +70,7 @@ func TestConsumer_Consume(t *testing.T) {
 	})
 }
 
+// nolint: govet
 func TestConsumer_ConsumeRetries(t *testing.T) {
 	run(t, func(t *testing.T, s *suite) {
 		is := assert.New(t)
@@ -129,6 +129,7 @@ func TestConsumer_ConsumeRetries(t *testing.T) {
 	})
 }
 
+// nolint: govet,gosimple
 func TestConsumer_ConsumeLong(t *testing.T) {
 	run(t, func(t *testing.T, s *suite) {
 		is := assert.New(t)

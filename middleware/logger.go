@@ -34,9 +34,7 @@ func RequestLogger(f LogFormatter) func(next bokchoy.Handler) bokchoy.Handler {
 
 			r = r.WithContext(ctx)
 
-			next.Handle(WithLogEntry(r, entry))
-
-			return nil
+			return next.Handle(WithLogEntry(r, entry))
 		}
 		return bokchoy.HandlerFunc(fn)
 	}

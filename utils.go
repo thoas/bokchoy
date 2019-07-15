@@ -74,9 +74,9 @@ func mapString(values map[string]interface{}, key string, optional bool) (string
 		return "", errors.Wrapf(ErrAttributeError, "cannot cast `%s`", key)
 	}
 
-	switch raw.(type) {
+	switch raw := raw.(type) {
 	case string:
-		return raw.(string), nil
+		return raw, nil
 	case int, int64:
 		return fmt.Sprintf("%d", raw), nil
 	}

@@ -45,7 +45,8 @@ func TestQueue_Save(t *testing.T) {
 		is.NoError(err)
 
 		task1.MarkAsSucceeded()
-		queue.Save(ctx, task1)
+		err = queue.Save(ctx, task1)
+		is.NoError(err)
 
 		task2, err := queue.Get(ctx, task1.ID)
 		is.NotZero(task2)

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+package proto;
+
+message PublishTaskRequest {
+	string queue = 1;
+	google.protobuf.BytesValue payload = 2;
+
+	google.protobuf.Duration countdown = 3 [(gogoproto.stdduration) = true];
+	google.protobuf.Duration timeout = 4 [(gogoproto.stdduration) = true];
+
+	google.protobuf.Duration ttl = 5 [(gogoproto.customname) = "TTL", (gogoproto.stdduration) = true];
+
+	google.protobuf.Int64Value max_retries = 6 [(gogoproto.nullable) = true];
+
+	repeated google.protobuf.Duration retry_intervals = 7 [(gogoproto.stdduration) = true];
+}
+
+message Task {
+	string id = 1 [(gogoproto.customname) = "ID"];
+	string name = 2;
+	google.protobuf.BytesValue payload = 3;
+	int64 status = 4;
+	int64 max_retries = 5;
+	google.protobuf.Duration timeout = 6 [(gogoproto.stdduration) = true];
+	google.protobuf.Duration ttl = 7 [(gogoproto.customname) = "TTL", (gogoproto.stdduration) = true];
+	repeated google.protobuf.Duration retry_intervals = 8 [(gogoproto.stdduration) = true];
+	google.protobuf.Timestamp published_at = 9 [(gogoproto.stdtime) = true];
+	google.protobuf.Timestamp started_at = 10 [(gogoproto.stdtime) = true];
+	google.protobuf.Timestamp processed_at = 11 [(gogoproto.stdtime) = true];
+	google.protobuf.Timestamp eta = 12 [(gogoproto.customname) = "ETA", (gogoproto.stdtime) = true];
+}
+
+service Bokchoy {
+	rpc PublishTask(PublishTaskRequest) returns (Task) {}
+}

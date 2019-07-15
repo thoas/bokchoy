@@ -123,13 +123,14 @@ func (q *Queue) HandleFunc(f HandlerFunc, options ...Option) *Queue {
 	}
 
 	for i := 0; i < opts.Concurrency; i++ {
+		consumerName := fmt.Sprintf("consumer:%s#%d", q.name, i+1)
+
 		consumer := &consumer{
-			name:       q.name,
-			handler:    f,
-			queue:      q,
-			serializer: q.serializer,
-			logger: q.logger.With(logging.String("component",
-				fmt.Sprintf("consumer:%s#%d", q.name, i+1))),
+			name:        consumerName,
+			handler:     f,
+			queue:       q,
+			serializer:  q.serializer,
+			logger:      q.logger.With(logging.String("component", consumerName)),
 			tracer:      q.tracer,
 			wg:          q.wg,
 			mu:          &sync.Mutex{},

@@ -1,7 +1,6 @@
 package bokchoy
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -22,18 +21,20 @@ type Options struct {
 	Initialize     bool
 	Queues         []string
 	DisableOutput  bool
+	Services       []Service
 }
 
 // RetryIntervalsDisplay returns a string representation of the retry intervals.
 func (o Options) RetryIntervalsDisplay() string {
 	intervals := make([]string, len(o.RetryIntervals))
 	for i := range o.RetryIntervals {
-		intervals[i] = fmt.Sprintf("%s", o.RetryIntervals[i])
+		intervals[i] = o.RetryIntervals[i].String()
 	}
 
 	return strings.Join(intervals, ", ")
 }
 
+// newOptions returns default options.
 func newOptions() *Options {
 	opts := &Options{}
 
@@ -61,6 +62,13 @@ type Option func(opts *Options)
 func WithDisableOutput(disableOutput bool) Option {
 	return func(opts *Options) {
 		opts.DisableOutput = disableOutput
+	}
+}
+
+// WithServices registers new services to be run.
+func WithServices(services []Service) Option {
+	return func(opts *Options) {
+		opts.Services = services
 	}
 }
 

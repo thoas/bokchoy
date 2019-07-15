@@ -27,12 +27,16 @@ func (c *consumer) stop(ctx context.Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.closed == false {
+	if !c.closed {
 		c.wg.Done()
 		c.closed = true
 	}
 
-	c.logger.Debug(ctx, "Stopped")
+	c.logger.Debug(ctx, fmt.Sprintf("Stopped %s", c))
+}
+
+func (c *consumer) String() string {
+	return c.name
 }
 
 func (c *consumer) handleTask(ctx context.Context, r *Request) error {
@@ -102,7 +106,7 @@ func (c *consumer) handleError(ctx context.Context, task *Task, err error) error
 	// Why do we have to call it twice?
 	// A panicking task should be marked as failed, when it's panicking
 	// the first handleError is skipped.
-	if task.IsStatusProcessing() == false {
+	if !task.IsStatusProcessing() {
 		return nil
 	}
 
@@ -191,7 +195,10 @@ func (c *consumer) Handle(r *Request) error {
 			return err
 		}
 
-		c.queue.fireEvents(r)
+		err = c.queue.fireEvents(r)
+		if err != nil {
+			return err
+		}
 
 		err = c.handleTask(ctx, r)
 
@@ -214,7 +221,7 @@ func (c *consumer) start(ctx context.Context) {
 
 	c.consume(ctx)
 
-	c.logger.Debug(ctx, "Started")
+	c.logger.Debug(ctx, fmt.Sprintf("Started %s", c))
 }
 
 func (c *consumer) isClosed() bool {
@@ -257,3 +264,5 @@ func (c *consumer) consume(ctx context.Context) {
 		}
 	}()
 }
+
+var _ Handler = (*consumer)(nil)
