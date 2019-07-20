@@ -31,3 +31,5 @@ func (t loggerTracer) String() string {
 func (t loggerTracer) Log(ctx context.Context, msg string, err error) {
 	t.logger.Error(ctx, msg, logging.Error(err))
 }
+
+var _ Tracer = (*loggerTracer)(nil)

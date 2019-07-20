@@ -24,5 +24,4 @@ func (s *SentryTracer) Log(ctx context.Context, msg string, err error) {
 
 		sentry.CaptureException(err)
 	})
-
 }

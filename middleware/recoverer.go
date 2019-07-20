@@ -38,7 +38,7 @@ func Recoverer(next bokchoy.Handler) bokchoy.Handler {
 			}
 		}()
 
-		next.Handle(r)
+		err = next.Handle(r)
 
 		return err
 	})

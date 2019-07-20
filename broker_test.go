@@ -20,6 +20,8 @@ func TestBroker_Redis(t *testing.T) {
 			},
 		},
 	}, bokchoy.WithInitialize(false))
+	is.NoError(err)
+
 	_, err = bokchoy.New(ctx, bokchoy.Config{
 		Broker: bokchoy.BrokerConfig{
 			Type: "redis",

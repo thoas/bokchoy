@@ -16,3 +16,5 @@ func (s JSONSerializer) Loads(data []byte, v interface{}) error {
 func (s JSONSerializer) String() string {
 	return "json"
 }
+
+var _ Serializer = (*JSONSerializer)(nil)

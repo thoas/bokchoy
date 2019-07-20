@@ -16,6 +16,7 @@ type suite struct {
 
 type FuncTest func(t *testing.T, s *suite)
 
+// nolint
 func run(t *testing.T, f FuncTest) {
 	logger, err := logging.NewDevelopmentLogger()
 	if err != nil {
