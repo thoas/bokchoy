@@ -9,7 +9,7 @@
 Bokchoy is a simple Go library for queueing tasks and processing them in the background with workers.
 It should be integrated in your web stack easily and it's designed to have a low barrier entry for newcomers.
 
-It currently only supports [Redis](https://github.com/thoas/bokchoy/blob/master/broker_redis.go)
+It currently only supports [Redis](broker_redis.go)
 (client, sentinel and cluster) with some Lua magic, but internally it relies on a generic
 broker implementation to extends it.
 
@@ -30,6 +30,7 @@ on your business logic.
 * **Designed with a modular/composable APIs** - middlewares, queue middlewares
 * **Context control** - built on `context` package, providing value chaining, cancelations and timeouts
 * **Highly configurable** - tons of options to swap internal parts (broker, logger, timeouts, etc), if you cannot customize something then an option is missing
+* **Extensions** - RPC server powered by [gRPC](examples/rpc), [Sentry](examples/sentry), etc.
 
 ## Getting started
 
@@ -254,6 +255,8 @@ engine.Queue("tasks.message").HandleFunc(func(r *bokchoy.Request) error {
     return nil
 }, bokchoy.WithConcurrency(5))
 ```
+
+You can still set it globally with `bokchoy.WithConcurrency` option when initializing the engine.
 
 ### Retries
 
