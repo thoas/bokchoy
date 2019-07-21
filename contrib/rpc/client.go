@@ -12,15 +12,23 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+type ClientOptions struct {
+	MaxRetries      uint
+	PerRetryTimeout time.Duration
+	RetryCodes      []codes.Code
+}
+
 // NewClient initializes a new rpc client.
-func NewClient(addr string) *Client {
+func NewClient(addr string, options ClientOptions) *Client {
 	return &Client{
-		addr: addr,
+		addr:    addr,
+		options: options,
 	}
 }
 
 type Client struct {
-	addr string
+	addr    string
+	options ClientOptions
 }
 
 func (c *Client) dial() (*grpc.ClientConn, error) {
@@ -49,9 +57,9 @@ func (c *Client) PublishTask(ctx context.Context, queueName string, payload []by
 		Payload: &wrappers.BytesValue{
 			Value: payload,
 		},
-	}, grpc_retry.WithMax(3),
-		grpc_retry.WithPerRetryTimeout(1*time.Second),
-		grpc_retry.WithCodes(codes.Unavailable))
+	}, grpc_retry.WithMax(c.options.MaxRetries),
+		grpc_retry.WithPerRetryTimeout(c.options.PerRetryTimeout),
+		grpc_retry.WithCodes(c.options.RetryCodes...))
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to publish task")
 	}

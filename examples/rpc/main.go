@@ -7,10 +7,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/thoas/bokchoy"
 	"github.com/thoas/bokchoy/contrib/rpc"
 	"github.com/thoas/bokchoy/middleware"
+	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -48,7 +50,11 @@ func main() {
 
 	switch run {
 	case "client":
-		clt := rpc.NewClient(fmt.Sprintf(":%d", rpcPort))
+		clt := rpc.NewClient(fmt.Sprintf(":%d", rpcPort), rpc.ClientOptions{
+			MaxRetries:      3,
+			PerRetryTimeout: 1 * time.Second,
+			RetryCodes:      []codes.Code{codes.Unavailable},
+		})
 
 		task, err := clt.PublishTask(ctx, queueName, []byte(`{"data": "hello world"}`))
 		if err != nil {
