@@ -310,7 +310,7 @@ func (b *Bokchoy) Publish(ctx context.Context, queueName string, payload interfa
 
 // Handle registers a new handler to consume tasks for a queue.
 func (b *Bokchoy) Handle(queueName string, sub Handler, options ...Option) {
-	b.HandleFunc(queueName, sub.Handle)
+	b.HandleFunc(queueName, sub.Handle, options...)
 }
 
 // HandleFunc registers a new handler function to consume tasks for a queue.
