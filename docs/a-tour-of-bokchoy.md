@@ -296,7 +296,7 @@ Failed tasks are handled but a panic can happen in Go and we don't want our work
 
 Bokchoy comes equipped with a middleware package, providing a suite of standard middlewares.
 Middlewares have the same API as handlers. It's easy to implement them and
-can be assimiliate as net/http middlewares, they share the same purpose to
+can be assimiliated as net/http middlewares, they share the same purpose to
 follow the lifecycle of a Bokchoy request and interact with it.
 
 The previous handler is rewritten to panic:

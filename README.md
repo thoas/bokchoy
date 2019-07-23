@@ -155,6 +155,9 @@ generate a `Handler` from your function.
 
 See [worker](examples/worker) directory for more information and to run it.
 
+If you want a complete application example, you can read [A Tour of Bokchoy](docs/a-tour-of-bokchoy.md) which
+explain how to use the main features of it.
+
 ## Installation
 
 Using [Go Modules](https://github.com/golang/go/wiki/Modules)
@@ -165,7 +168,7 @@ go get github.com/thoas/bokchoy
 
 ## Advanced topics
 
-### Delayed task
+### Delayed tasks
 
 When publishing a task, it will be immediately processed by the worker if it's not already occupied,
 you may want to delay the task on some occasions by using `bokchoy.WithCountdown` option:
@@ -179,6 +182,20 @@ queue.Publish(ctx, payload, bokchoy.WithCountdown(5*time.Second))
 ```
 
 This task will be executed in 5 seconds.
+
+### Priority tasks
+
+A task can be published at front of others by providing a negative countdown.
+
+```go
+payload := map[string]string{
+    "data": "hello world",
+}
+
+queue.Publish(ctx, payload, bokchoy.WithCountdown(-1))
+```
+
+This task will be published and processed immediately.
 
 ### Custom serializer
 
