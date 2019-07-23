@@ -14,7 +14,7 @@ type Options struct {
 	Concurrency    int
 	MaxRetries     int
 	TTL            time.Duration
-	Countdown      time.Duration
+	Countdown      *time.Duration
 	Timeout        time.Duration
 	RetryIntervals []time.Duration
 	Serializer     Serializer
@@ -117,7 +117,7 @@ func WithTimeout(timeout time.Duration) Option {
 // WithCountdown defines the countdown to launch a delayed task.
 func WithCountdown(countdown time.Duration) Option {
 	return func(opts *Options) {
-		opts.Countdown = countdown
+		opts.Countdown = &countdown
 	}
 }
 

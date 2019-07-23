@@ -433,9 +433,10 @@ func (q *Queue) NewTask(payload interface{}, options ...Option) *Task {
 
 	var eta time.Time
 
-	if int(opts.Countdown.Seconds()) > 0 {
-		eta = time.Now().Add(opts.Countdown).UTC()
+	if opts.Countdown != nil {
+		eta = time.Now().Add(*opts.Countdown).UTC()
 	}
+
 	task.ETA = eta
 
 	return task

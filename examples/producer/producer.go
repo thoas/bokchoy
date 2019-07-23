@@ -32,7 +32,8 @@ func main() {
 		"data": "hello world",
 	}
 
-	task, err := engine.Queue("tasks.message").Publish(ctx, payload, bokchoy.WithTimeout(1*time.Second))
+	task, err := engine.Queue("tasks.message").Publish(ctx, payload,
+		bokchoy.WithTimeout(1*time.Second), bokchoy.WithCountdown(-1))
 	if err != nil {
 		log.Fatal(err)
 	}
