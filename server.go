@@ -2,7 +2,7 @@ package bokchoy
 
 import "context"
 
-type Service interface {
+type Server interface {
 	Start(context.Context) error
 	Stop(context.Context)
 }

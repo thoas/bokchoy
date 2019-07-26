@@ -86,7 +86,7 @@ func main() {
 			}
 		}()
 
-		engine.Run(ctx, bokchoy.WithServices([]bokchoy.Service{
+		engine.Run(ctx, bokchoy.WithServers([]bokchoy.Server{
 			rpc.NewServer(engine, rpcPort),
 		}))
 	}

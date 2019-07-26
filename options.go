@@ -21,7 +21,7 @@ type Options struct {
 	Initialize     bool
 	Queues         []string
 	DisableOutput  bool
-	Services       []Service
+	Servers        []Server
 }
 
 // RetryIntervalsDisplay returns a string representation of the retry intervals.
@@ -65,10 +65,10 @@ func WithDisableOutput(disableOutput bool) Option {
 	}
 }
 
-// WithServices registers new services to be run.
-func WithServices(services []Service) Option {
+// WithServers registers new servers to be run.
+func WithServers(servers []Server) Option {
 	return func(opts *Options) {
-		opts.Services = services
+		opts.Servers = servers
 	}
 }
 

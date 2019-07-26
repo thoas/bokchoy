@@ -70,4 +70,4 @@ func (s *Server) Stop(ctx context.Context) {
 	s.logger.Info(ctx, "Server shutdown")
 }
 
-var _ bokchoy.Service = (*Server)(nil)
+var _ bokchoy.Server = (*Server)(nil)

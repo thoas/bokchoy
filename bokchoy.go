@@ -25,7 +25,7 @@ type Bokchoy struct {
 	broker         Broker
 	queues         map[string]*Queue
 	middlewares    []func(Handler) Handler
-	services       []Service
+	servers        []Server
 
 	Serializer Serializer
 	Logger     logging.Logger
@@ -63,7 +63,7 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 		Logger:         logger,
 		Tracer:         tracer,
 		defaultOptions: opts,
-		services:       opts.Services,
+		servers:        opts.Servers,
 	}
 
 	if opts.Serializer != nil {
@@ -148,21 +148,21 @@ func (b *Bokchoy) Stop(ctx context.Context) {
 	}
 	b.Logger.Debug(ctx, "Queues stopped", fields...)
 
-	if len(b.services) == 0 {
+	if len(b.servers) == 0 {
 		return
 	}
 
 	fields = []logging.Field{
-		logging.String("services", strings.Join(b.ServiceNames(), ", ")),
+		logging.String("servers", strings.Join(b.ServerNames(), ", ")),
 	}
 
-	b.Logger.Debug(ctx, "Stopping services...", fields...)
-	for i := range b.services {
-		b.services[i].Stop(ctx)
+	b.Logger.Debug(ctx, "Stopping servers...", fields...)
+	for i := range b.servers {
+		b.servers[i].Stop(ctx)
 
 		b.wg.Done()
 	}
-	b.Logger.Debug(ctx, "Services stopped", fields...)
+	b.Logger.Debug(ctx, "Servers stopped", fields...)
 }
 
 // QueueNames returns the managed queue names.
@@ -176,12 +176,12 @@ func (b *Bokchoy) QueueNames() []string {
 	return names
 }
 
-// ServiceNames returns the managed server names.
-func (b *Bokchoy) ServiceNames() []string {
-	names := make([]string, 0, len(b.services))
+// ServerNames returns the managed server names.
+func (b *Bokchoy) ServerNames() []string {
+	names := make([]string, 0, len(b.servers))
 
-	for i := range b.services {
-		names = append(names, fmt.Sprintf("%s", b.services[i]))
+	for i := range b.servers {
+		names = append(names, fmt.Sprintf("%s", b.servers[i]))
 	}
 
 	return names
@@ -217,11 +217,11 @@ func (b *Bokchoy) displayOutput(ctx context.Context, queueNames []string) {
 		ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- %s", queueNames[i]))
 	}
 
-	if len(b.services) > 0 {
-		ColorWrite(buf, true, ColorBrightBlue, "\n\n[services]\n")
+	if len(b.servers) > 0 {
+		ColorWrite(buf, true, ColorBrightBlue, "\n\n[servers]\n")
 
-		for i := range b.services {
-			ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- %s", b.services[i]))
+		for i := range b.servers {
+			ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- %s", b.servers[i]))
 		}
 	}
 
@@ -235,8 +235,8 @@ func (b *Bokchoy) Run(ctx context.Context, options ...Option) error {
 		options[i](opts)
 	}
 
-	if len(opts.Services) > 0 {
-		b.services = opts.Services
+	if len(opts.Servers) > 0 {
+		b.servers = opts.Servers
 	}
 
 	err := b.broker.Ping()
@@ -274,24 +274,24 @@ func (b *Bokchoy) Run(ctx context.Context, options ...Option) error {
 	b.Logger.Debug(ctx, "Queues started", fields...)
 
 	fields = []logging.Field{
-		logging.String("services", strings.Join(b.ServiceNames(), ", ")),
+		logging.String("servers", strings.Join(b.ServerNames(), ", ")),
 	}
 
-	if len(b.services) > 0 {
-		b.Logger.Debug(ctx, "Starting services...", fields...)
+	if len(b.servers) > 0 {
+		b.Logger.Debug(ctx, "Starting servers...", fields...)
 
-		for i := range b.services {
+		for i := range b.servers {
 			b.wg.Add(1)
 
-			go func(service Service) {
-				err := service.Start(ctx)
+			go func(server Server) {
+				err := server.Start(ctx)
 				if err != nil {
-					b.Logger.Error(ctx, fmt.Sprintf("Receive error when starting %s", service), logging.Error(err))
+					b.Logger.Error(ctx, fmt.Sprintf("Receive error when starting %s", server), logging.Error(err))
 				}
-			}(b.services[i])
+			}(b.servers[i])
 		}
 
-		b.Logger.Debug(ctx, "Services started", fields...)
+		b.Logger.Debug(ctx, "Servers started", fields...)
 	}
 
 	if !b.defaultOptions.DisableOutput {
