@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// Color is a terminal color representation.
 type Color []byte
 
 var (

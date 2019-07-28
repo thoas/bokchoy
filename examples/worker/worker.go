@@ -45,8 +45,8 @@ func main() {
 	}
 
 	engine.Use(middleware.Recoverer)
-	engine.Use(middleware.DefaultLogger)
 	engine.Use(middleware.RequestID)
+	engine.Use(middleware.DefaultLogger)
 
 	engine.Queue("tasks.message").HandleFunc(func(r *bokchoy.Request) error {
 		fmt.Println("Receive request:", r)
