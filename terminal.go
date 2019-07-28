@@ -4,33 +4,35 @@ package bokchoy
 // https://github.com/zenazn/goji/tree/master/web/middleware
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"os"
 )
 
+type Color []byte
+
 var (
 	// Normal colors
-	ColorBlack   = []byte{'\033', '[', '3', '0', 'm'}
-	ColorRed     = []byte{'\033', '[', '3', '1', 'm'}
-	ColorGreen   = []byte{'\033', '[', '3', '2', 'm'}
-	ColorYellow  = []byte{'\033', '[', '3', '3', 'm'}
-	ColorBlue    = []byte{'\033', '[', '3', '4', 'm'}
-	ColorMagenta = []byte{'\033', '[', '3', '5', 'm'}
-	ColorCyan    = []byte{'\033', '[', '3', '6', 'm'}
-	ColorWhite   = []byte{'\033', '[', '3', '7', 'm'}
+	ColorBlack   = Color{'\033', '[', '3', '0', 'm'}
+	ColorRed     = Color{'\033', '[', '3', '1', 'm'}
+	ColorGreen   = Color{'\033', '[', '3', '2', 'm'}
+	ColorYellow  = Color{'\033', '[', '3', '3', 'm'}
+	ColorBlue    = Color{'\033', '[', '3', '4', 'm'}
+	ColorMagenta = Color{'\033', '[', '3', '5', 'm'}
+	ColorCyan    = Color{'\033', '[', '3', '6', 'm'}
+	ColorWhite   = Color{'\033', '[', '3', '7', 'm'}
 
 	// Bright colors
-	ColorBrightBlack   = []byte{'\033', '[', '3', '0', ';', '1', 'm'}
-	ColorBrightRed     = []byte{'\033', '[', '3', '1', ';', '1', 'm'}
-	ColorBrightGreen   = []byte{'\033', '[', '3', '2', ';', '1', 'm'}
-	ColorBrightYellow  = []byte{'\033', '[', '3', '3', ';', '1', 'm'}
-	ColorBrightBlue    = []byte{'\033', '[', '3', '4', ';', '1', 'm'}
-	ColorBrightMagenta = []byte{'\033', '[', '3', '5', ';', '1', 'm'}
-	ColorBrightCyan    = []byte{'\033', '[', '3', '6', ';', '1', 'm'}
-	ColorBrightWhite   = []byte{'\033', '[', '3', '7', ';', '1', 'm'}
+	ColorBrightBlack   = Color{'\033', '[', '3', '0', ';', '1', 'm'}
+	ColorBrightRed     = Color{'\033', '[', '3', '1', ';', '1', 'm'}
+	ColorBrightGreen   = Color{'\033', '[', '3', '2', ';', '1', 'm'}
+	ColorBrightYellow  = Color{'\033', '[', '3', '3', ';', '1', 'm'}
+	ColorBrightBlue    = Color{'\033', '[', '3', '4', ';', '1', 'm'}
+	ColorBrightMagenta = Color{'\033', '[', '3', '5', ';', '1', 'm'}
+	ColorBrightCyan    = Color{'\033', '[', '3', '6', ';', '1', 'm'}
+	ColorBrightWhite   = Color{'\033', '[', '3', '7', ';', '1', 'm'}
 
-	ColorReset = []byte{'\033', '[', '0', 'm'}
+	ColorReset = Color{'\033', '[', '0', 'm'}
 )
 
 var isTTY bool
@@ -52,15 +54,35 @@ func init() {
 	}
 }
 
-// ColorWrite writes an output to stdout.
+// ColorWriter is a bytes buffer with color.
+type ColorWriter struct {
+	*bytes.Buffer
+	color Color
+}
+
+// WithColor returns a new ColorWriter with a new color.
+func (c ColorWriter) WithColor(color Color) *ColorWriter {
+	c.color = color
+	return &c
+}
+
+// NewColorWriter initializes a new ColorWriter.
+func NewColorWriter(color Color) *ColorWriter {
+	return &ColorWriter{
+		&bytes.Buffer{},
+		color,
+	}
+}
+
+// Write writes an output to stdout.
 // nolint: errcheck
-func ColorWrite(w io.Writer, useColor bool, color []byte, s string, args ...interface{}) {
-	if isTTY && useColor {
-		w.Write(color)
+func (c *ColorWriter) Write(s string, args ...interface{}) {
+	if isTTY && c.color != nil {
+		c.Buffer.Write(c.color)
 	}
 
-	fmt.Fprintf(w, s, args...)
-	if isTTY && useColor {
-		w.Write(ColorReset)
+	fmt.Fprintf(c.Buffer, s, args...)
+	if isTTY && c.color != nil {
+		c.Buffer.Write(ColorReset)
 	}
 }

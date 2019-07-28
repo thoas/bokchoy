@@ -1,7 +1,6 @@
 package bokchoy
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -188,40 +187,41 @@ func (b *Bokchoy) ServerNames() []string {
 }
 
 func (b *Bokchoy) displayOutput(ctx context.Context, queueNames []string) {
-	buf := &bytes.Buffer{}
-	ColorWrite(buf, true, ColorBrightGreen, "%s\n", logo)
+	buf := NewColorWriter(ColorBrightGreen)
+	buf.Write("%s\n", logo)
+	buf = buf.WithColor(ColorBrightBlue)
 
 	user, err := user.Current()
 	if err == nil {
 		hostname, err := os.Hostname()
 		if err == nil {
-			ColorWrite(buf, true, ColorBrightBlue, "%s@%s %v\n", user.Username, hostname, Version)
-			ColorWrite(buf, true, ColorBrightBlue, "- uid: %s\n", user.Uid)
-			ColorWrite(buf, true, ColorBrightBlue, "- gid: %s\n\n", user.Gid)
+			buf.Write("%s@%s %v\n", user.Username, hostname, Version)
+			buf.Write("- uid: %s\n", user.Uid)
+			buf.Write("- gid: %s\n\n", user.Gid)
 		}
 	}
 
-	ColorWrite(buf, true, ColorBrightBlue, "[config]\n")
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- concurrency: %d\n", b.defaultOptions.Concurrency))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- serializer: %s\n", b.Serializer))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- max retries: %d\n", b.defaultOptions.MaxRetries))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- retry intervals: %s\n", b.defaultOptions.RetryIntervalsDisplay()))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- ttl: %s\n", b.defaultOptions.TTL))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- countdown: %s\n", b.defaultOptions.Countdown))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- timeout: %s\n", b.defaultOptions.Timeout))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- tracer: %s\n", b.Tracer))
-	ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- broker: %s\n", b.broker))
-	ColorWrite(buf, true, ColorBrightBlue, "\n[queues]\n")
+	buf.Write("[config]\n")
+	buf.Write(fmt.Sprintf("- concurrency: %d\n", b.defaultOptions.Concurrency))
+	buf.Write(fmt.Sprintf("- serializer: %s\n", b.Serializer))
+	buf.Write(fmt.Sprintf("- max retries: %d\n", b.defaultOptions.MaxRetries))
+	buf.Write(fmt.Sprintf("- retry intervals: %s\n", b.defaultOptions.RetryIntervalsDisplay()))
+	buf.Write(fmt.Sprintf("- ttl: %s\n", b.defaultOptions.TTL))
+	buf.Write(fmt.Sprintf("- countdown: %s\n", b.defaultOptions.Countdown))
+	buf.Write(fmt.Sprintf("- timeout: %s\n", b.defaultOptions.Timeout))
+	buf.Write(fmt.Sprintf("- tracer: %s\n", b.Tracer))
+	buf.Write(fmt.Sprintf("- broker: %s\n", b.broker))
+	buf.Write("\n[queues]\n")
 
 	for i := range queueNames {
-		ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- %s", queueNames[i]))
+		buf.Write(fmt.Sprintf("- %s", queueNames[i]))
 	}
 
 	if len(b.servers) > 0 {
-		ColorWrite(buf, true, ColorBrightBlue, "\n\n[servers]\n")
+		buf.Write("\n\n[servers]\n")
 
 		for i := range b.servers {
-			ColorWrite(buf, true, ColorBrightBlue, fmt.Sprintf("- %s", b.servers[i]))
+			buf.Write(fmt.Sprintf("- %s", b.servers[i]))
 		}
 	}
 

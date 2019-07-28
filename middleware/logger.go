@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"bytes"
 	"context"
 	"log"
 	"os"
@@ -78,22 +77,23 @@ type DefaultLogFormatter struct {
 
 // NewLogEntry creates a new LogEntry for the request.
 func (l *DefaultLogFormatter) NewLogEntry(r *bokchoy.Request) LogEntry {
-	useColor := !l.NoColor
 	entry := &defaultLogEntry{
 		DefaultLogFormatter: l,
 		request:             r,
-		buf:                 &bytes.Buffer{},
-		useColor:            useColor,
+		buf:                 bokchoy.NewColorWriter(nil),
 	}
 
 	reqID := GetReqID(r.Context())
 	if reqID != "" {
-		bokchoy.ColorWrite(entry.buf, useColor, bokchoy.ColorYellow, "[%s] ", reqID)
+		entry.buf = entry.buf.WithColor(bokchoy.ColorYellow)
+		entry.buf.Write("[%s] ", reqID)
 	}
 
 	task := r.Task
 
-	bokchoy.ColorWrite(entry.buf, useColor, bokchoy.ColorBrightMagenta, "<Task id=%s name=%s payload=%v>", task.ID, task.Name, task.Payload)
+	entry.buf = entry.buf.WithColor(bokchoy.ColorBrightMagenta)
+	entry.buf.Write("<Task id=%s name=%s payload=%v>", task.ID, task.Name, task.Payload)
+	entry.buf = entry.buf.WithColor(bokchoy.ColorWhite)
 	entry.buf.WriteString(" - ")
 
 	return entry
@@ -101,9 +101,8 @@ func (l *DefaultLogFormatter) NewLogEntry(r *bokchoy.Request) LogEntry {
 
 type defaultLogEntry struct {
 	*DefaultLogFormatter
-	request  *bokchoy.Request
-	buf      *bytes.Buffer
-	useColor bool
+	request *bokchoy.Request
+	buf     *bokchoy.ColorWriter
 }
 
 func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
@@ -111,30 +110,41 @@ func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
 
 	switch {
 	case task.IsStatusProcessing():
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightBlue, "%s", task.StatusDisplay())
+		l.buf = l.buf.WithColor(bokchoy.ColorBrightBlue)
+		l.buf.Write("%s", task.StatusDisplay())
 	case task.IsStatusSucceeded():
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightGreen, "%s", task.StatusDisplay())
+		l.buf = l.buf.WithColor(bokchoy.ColorBrightGreen)
+		l.buf.Write("%s", task.StatusDisplay())
 	case task.IsStatusCanceled():
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightYellow, "%s", task.StatusDisplay())
+		l.buf = l.buf.WithColor(bokchoy.ColorBrightYellow)
+		l.buf.Write("%s", task.StatusDisplay())
 	case task.IsStatusFailed():
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightRed, "%s", task.StatusDisplay())
+		l.buf = l.buf.WithColor(bokchoy.ColorBrightRed)
+		l.buf.Write("%s", task.StatusDisplay())
 	}
 
 	l.buf.WriteString(" - ")
 
+	l.buf = l.buf.WithColor(bokchoy.ColorBrightBlue)
+
 	if task.Result == nil {
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightBlue, "result: (empty)")
+		l.buf.Write("result: (empty)")
 	} else {
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorBrightBlue, "result: \"%s\"", task.Result)
+		l.buf.Write("result: \"%s\"", task.Result)
 	}
+
+	l.buf = l.buf.WithColor(bokchoy.ColorWhite)
 
 	l.buf.WriteString(" in ")
 	if elapsed < 500*time.Millisecond {
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorGreen, "%s", elapsed)
+		l.buf = l.buf.WithColor(bokchoy.ColorGreen)
+		l.buf.Write("%s", elapsed)
 	} else if elapsed < 5*time.Second {
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorYellow, "%s", elapsed)
+		l.buf = l.buf.WithColor(bokchoy.ColorYellow)
+		l.buf.Write("%s", elapsed)
 	} else {
-		bokchoy.ColorWrite(l.buf, l.useColor, bokchoy.ColorRed, "%s", elapsed)
+		l.buf = l.buf.WithColor(bokchoy.ColorRed)
+		l.buf.Write("%s", elapsed)
 	}
 
 	l.Logger.Print(l.buf.String())
@@ -142,7 +152,8 @@ func (l *defaultLogEntry) Write(r *bokchoy.Request, elapsed time.Duration) {
 
 func (l *defaultLogEntry) Panic(v interface{}, stack []byte) {
 	panicEntry := l.NewLogEntry(l.request).(*defaultLogEntry)
-	bokchoy.ColorWrite(panicEntry.buf, l.useColor, bokchoy.ColorRed, "panic: %+v", v)
+	l.buf = l.buf.WithColor(bokchoy.ColorRed)
+	l.buf.Write("panic: %+v", v)
 	l.Logger.Print(panicEntry.buf.String())
 	l.Logger.Print(string(stack))
 }
