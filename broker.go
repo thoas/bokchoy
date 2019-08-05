@@ -45,7 +45,7 @@ func newBroker(ctx context.Context, cfg BrokerConfig, logger logging.Logger) Bro
 
 	switch cfg.Type {
 	default:
-		broker = newRedisBroker(ctx, cfg.Redis, logger)
+		broker = newRedisBroker(ctx, cfg, logger)
 	}
 
 	return broker

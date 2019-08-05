@@ -71,64 +71,67 @@ return cjson.encode(data)`,
 }
 
 // newRedisBroker initializes a new redis client.
-func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger) *redisBroker {
+func newRedisBroker(ctx context.Context, cfg BrokerConfig, logger logging.Logger) *redisBroker {
 	var clt redisClient
+	if cfg.RedisClient != nil {
+		clt = cfg.RedisClient
+	} else {
+		switch cfg.Redis.Type {
+		case redisTypeSentinel:
+			clt = redis.NewFailoverClient(&redis.FailoverOptions{
+				MasterName:         cfg.Redis.Sentinel.MasterName,
+				SentinelAddrs:      cfg.Redis.Sentinel.SentinelAddrs,
+				Password:           cfg.Redis.Sentinel.Password,
+				MaxRetries:         cfg.Redis.Sentinel.MaxRetries,
+				DialTimeout:        cfg.Redis.Sentinel.DialTimeout,
+				ReadTimeout:        cfg.Redis.Sentinel.ReadTimeout,
+				WriteTimeout:       cfg.Redis.Sentinel.WriteTimeout,
+				PoolSize:           cfg.Redis.Sentinel.PoolSize,
+				PoolTimeout:        cfg.Redis.Sentinel.PoolTimeout,
+				IdleTimeout:        cfg.Redis.Sentinel.IdleTimeout,
+				MinIdleConns:       cfg.Redis.Sentinel.MinIdleConns,
+				MaxConnAge:         cfg.Redis.Sentinel.MaxConnAge,
+				IdleCheckFrequency: cfg.Redis.Sentinel.IdleCheckFrequency,
+			})
+		case redisTypeCluster:
+			clt = redis.NewClusterClient(&redis.ClusterOptions{
+				Addrs:              cfg.Redis.Cluster.Addrs,
+				Password:           cfg.Redis.Cluster.Password,
+				MaxRetries:         cfg.Redis.Cluster.MaxRetries,
+				DialTimeout:        cfg.Redis.Cluster.DialTimeout,
+				ReadTimeout:        cfg.Redis.Cluster.ReadTimeout,
+				WriteTimeout:       cfg.Redis.Cluster.WriteTimeout,
+				PoolSize:           cfg.Redis.Cluster.PoolSize,
+				PoolTimeout:        cfg.Redis.Cluster.PoolTimeout,
+				IdleTimeout:        cfg.Redis.Cluster.IdleTimeout,
+				MinIdleConns:       cfg.Redis.Cluster.MinIdleConns,
+				MaxConnAge:         cfg.Redis.Cluster.MaxConnAge,
+				IdleCheckFrequency: cfg.Redis.Cluster.IdleCheckFrequency,
+			})
+		default:
+			clt = redis.NewClient(&redis.Options{
+				Addr:               cfg.Redis.Client.Addr,
+				Password:           cfg.Redis.Client.Password,
+				DB:                 cfg.Redis.Client.DB,
+				MaxRetries:         cfg.Redis.Client.MaxRetries,
+				DialTimeout:        cfg.Redis.Client.DialTimeout,
+				ReadTimeout:        cfg.Redis.Client.ReadTimeout,
+				WriteTimeout:       cfg.Redis.Client.WriteTimeout,
+				PoolSize:           cfg.Redis.Client.PoolSize,
+				PoolTimeout:        cfg.Redis.Client.PoolTimeout,
+				IdleTimeout:        cfg.Redis.Client.IdleTimeout,
+				MinIdleConns:       cfg.Redis.Client.MinIdleConns,
+				MaxConnAge:         cfg.Redis.Client.MaxConnAge,
+				IdleCheckFrequency: cfg.Redis.Client.IdleCheckFrequency,
+			})
 
-	switch cfg.Type {
-	case redisTypeSentinel:
-		clt = redis.NewFailoverClient(&redis.FailoverOptions{
-			MasterName:         cfg.Sentinel.MasterName,
-			SentinelAddrs:      cfg.Sentinel.SentinelAddrs,
-			Password:           cfg.Sentinel.Password,
-			MaxRetries:         cfg.Sentinel.MaxRetries,
-			DialTimeout:        cfg.Sentinel.DialTimeout,
-			ReadTimeout:        cfg.Sentinel.ReadTimeout,
-			WriteTimeout:       cfg.Sentinel.WriteTimeout,
-			PoolSize:           cfg.Sentinel.PoolSize,
-			PoolTimeout:        cfg.Sentinel.PoolTimeout,
-			IdleTimeout:        cfg.Sentinel.IdleTimeout,
-			MinIdleConns:       cfg.Sentinel.MinIdleConns,
-			MaxConnAge:         cfg.Sentinel.MaxConnAge,
-			IdleCheckFrequency: cfg.Sentinel.IdleCheckFrequency,
-		})
-	case redisTypeCluster:
-		clt = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:              cfg.Cluster.Addrs,
-			Password:           cfg.Cluster.Password,
-			MaxRetries:         cfg.Cluster.MaxRetries,
-			DialTimeout:        cfg.Cluster.DialTimeout,
-			ReadTimeout:        cfg.Cluster.ReadTimeout,
-			WriteTimeout:       cfg.Cluster.WriteTimeout,
-			PoolSize:           cfg.Cluster.PoolSize,
-			PoolTimeout:        cfg.Cluster.PoolTimeout,
-			IdleTimeout:        cfg.Cluster.IdleTimeout,
-			MinIdleConns:       cfg.Cluster.MinIdleConns,
-			MaxConnAge:         cfg.Cluster.MaxConnAge,
-			IdleCheckFrequency: cfg.Cluster.IdleCheckFrequency,
-		})
-	default:
-		clt = redis.NewClient(&redis.Options{
-			Addr:               cfg.Client.Addr,
-			Password:           cfg.Client.Password,
-			DB:                 cfg.Client.DB,
-			MaxRetries:         cfg.Client.MaxRetries,
-			DialTimeout:        cfg.Client.DialTimeout,
-			ReadTimeout:        cfg.Client.ReadTimeout,
-			WriteTimeout:       cfg.Client.WriteTimeout,
-			PoolSize:           cfg.Client.PoolSize,
-			PoolTimeout:        cfg.Client.PoolTimeout,
-			IdleTimeout:        cfg.Client.IdleTimeout,
-			MinIdleConns:       cfg.Client.MinIdleConns,
-			MaxConnAge:         cfg.Client.MaxConnAge,
-			IdleCheckFrequency: cfg.Client.IdleCheckFrequency,
-		})
-
+		}
 	}
 
 	return &redisBroker{
-		clientType: cfg.Type,
+		clientType: cfg.Redis.Type,
 		clt:        clt,
-		prefix:     cfg.Prefix,
+		prefix:     cfg.Redis.Prefix,
 		logger:     logger,
 	}
 }

@@ -27,8 +27,9 @@ type QueueConfig struct {
 
 // BrokerConfig contains the broker configuration.
 type BrokerConfig struct {
-	Type  string
-	Redis RedisConfig
+	Type        string
+	Redis       RedisConfig
+	RedisClient *redis.Client
 }
 
 // Config contains the main configuration to initialize Bokchoy.
