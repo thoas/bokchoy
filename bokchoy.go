@@ -69,8 +69,12 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 		bok.Serializer = opts.Serializer
 	}
 
-	bok.broker = newBroker(ctx, cfg.Broker,
-		logger.With(logging.String("component", "broker")))
+	if opts.Broker != nil {
+		bok.broker = opts.Broker
+	} else {
+		bok.broker = newBroker(ctx, cfg.Broker,
+			logger.With(logging.String("component", "broker")))
+	}
 
 	if opts.Initialize {
 		bok.Logger.Debug(ctx, fmt.Sprintf("Connecting to %s...", bok.broker))

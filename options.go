@@ -22,6 +22,7 @@ type Options struct {
 	Queues         []string
 	DisableOutput  bool
 	Servers        []Server
+	Broker         Broker
 }
 
 // RetryIntervalsDisplay returns a string representation of the retry intervals.
@@ -62,6 +63,13 @@ type Option func(opts *Options)
 func WithDisableOutput(disableOutput bool) Option {
 	return func(opts *Options) {
 		opts.DisableOutput = disableOutput
+	}
+}
+
+// WithBroker registers new broker.
+func WithBroker(broker Broker) Option {
+	return func(opts *Options) {
+		opts.Broker = broker
 	}
 }
 

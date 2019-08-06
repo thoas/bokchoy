@@ -17,12 +17,12 @@ type redisClient interface {
 	redis.UniversalClient
 }
 
-type redisBroker struct {
-	clientType string
-	cfg        RedisConfig
-	clt        redisClient
-	prefix     string
-	logger     logging.Logger
+// RedisBroker is the redis broker.
+type RedisBroker struct {
+	ClientType string
+	Client     redisClient
+	Prefix     string
+	Logger     logging.Logger
 	scripts    map[string]string
 }
 
@@ -71,7 +71,7 @@ return cjson.encode(data)`,
 }
 
 // newRedisBroker initializes a new redis client.
-func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger) *redisBroker {
+func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger) *RedisBroker {
 	var clt redisClient
 
 	switch cfg.Type {
@@ -125,28 +125,28 @@ func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger)
 
 	}
 
-	return &redisBroker{
-		clientType: cfg.Type,
-		clt:        clt,
-		prefix:     cfg.Prefix,
-		logger:     logger,
+	return &RedisBroker{
+		ClientType: cfg.Type,
+		Client:     clt,
+		Prefix:     cfg.Prefix,
+		Logger:     logger,
 	}
 }
 
-func (p redisBroker) String() string {
-	return fmt.Sprintf("redis (%s)", p.clientType)
+func (p RedisBroker) String() string {
+	return fmt.Sprintf("redis (%s)", p.ClientType)
 }
 
 // Initialize initializes the redis broker.
-func (p *redisBroker) Initialize(ctx context.Context) error {
-	err := p.clt.Ping().Err()
+func (p *RedisBroker) Initialize(ctx context.Context) error {
+	err := p.Client.Ping().Err()
 	if err != nil {
 		return err
 	}
 
 	p.scripts = make(map[string]string)
 	for key := range redisScripts {
-		sha, err := p.clt.ScriptLoad(redisScripts[key]).Result()
+		sha, err := p.Client.ScriptLoad(redisScripts[key]).Result()
 		if err != nil {
 			return errors.Wrapf(err, "Unable to load script %s", key)
 		}
@@ -158,24 +158,24 @@ func (p *redisBroker) Initialize(ctx context.Context) error {
 }
 
 // Ping pings the redis broker to ensure it's well connected.
-func (p redisBroker) Ping() error {
-	_, err := p.clt.Ping().Result()
+func (p RedisBroker) Ping() error {
+	_, err := p.Client.Ping().Result()
 	if err != nil {
-		return errors.Wrapf(err, "unable to ping redis %s", p.cfg.Type)
+		return errors.Wrapf(err, "unable to ping redis %s", p.ClientType)
 	}
 
 	return nil
 }
 
-func (p redisBroker) prefixed(keys ...interface{}) string {
-	parts := []interface{}{p.prefix}
+func (p RedisBroker) prefixed(keys ...interface{}) string {
+	parts := []interface{}{p.Prefix}
 	parts = append(parts, keys...)
 
 	return fmt.Sprint(parts...)
 }
 
 // Consume returns an array of raw data.
-func (p *redisBroker) Consume(name string, taskPrefix string, eta time.Time) ([]map[string]interface{}, error) {
+func (p *RedisBroker) Consume(name string, taskPrefix string, eta time.Time) ([]map[string]interface{}, error) {
 	var (
 		err      error
 		result   []string
@@ -183,14 +183,14 @@ func (p *redisBroker) Consume(name string, taskPrefix string, eta time.Time) ([]
 	)
 
 	if eta.IsZero() {
-		result, err = p.clt.BRPop(1*time.Second, queueKey).Result()
+		result, err = p.Client.BRPop(1*time.Second, queueKey).Result()
 
 		if err != nil && err != redis.Nil {
 			return nil, errors.Wrapf(err, "unable to BRPOP %s", queueKey)
 		}
 	} else {
 		max := fmt.Sprintf("%d", eta.UTC().Unix())
-		vals, err := p.clt.EvalSha(p.scripts["ZPOPBYSCORE"], nil, queueKey, "0", max).Result()
+		vals, err := p.Client.EvalSha(p.scripts["ZPOPBYSCORE"], nil, queueKey, "0", max).Result()
 		if err != nil && err != redis.Nil {
 			return nil, errors.Wrapf(err, "unable to ZPOPBYSCORE %s", queueKey)
 		}
@@ -224,7 +224,7 @@ func (p *redisBroker) Consume(name string, taskPrefix string, eta time.Time) ([]
 		taskKeys = append(taskKeys, p.prefixed(taskPrefix, result[i]))
 	}
 
-	vals, err := p.clt.EvalSha(p.scripts["MULTIHGETALL"], taskKeys).Result()
+	vals, err := p.Client.EvalSha(p.scripts["MULTIHGETALL"], taskKeys).Result()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to HGETALL %s", strings.Join(taskKeys, ", "))
 	}
@@ -248,10 +248,10 @@ func (p *redisBroker) Consume(name string, taskPrefix string, eta time.Time) ([]
 }
 
 // Get returns stored raw data from task key.
-func (p *redisBroker) Get(taskKey string) (map[string]interface{}, error) {
+func (p *RedisBroker) Get(taskKey string) (map[string]interface{}, error) {
 	taskKey = p.prefixed(taskKey)
 
-	res, err := p.clt.HGetAll(taskKey).Result()
+	res, err := p.Client.HGetAll(taskKey).Result()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to HGETALL %s", taskKey)
 	}
@@ -265,21 +265,21 @@ func (p *redisBroker) Get(taskKey string) (map[string]interface{}, error) {
 }
 
 // Count returns number of items from a queue name.
-func (p *redisBroker) Count(queueName string) (int, error) {
+func (p *RedisBroker) Count(queueName string) (int, error) {
 	queueName = p.prefixed(queueName)
 
 	var res *redis.IntCmd
 
-	value, err := p.clt.Type(queueName).Result()
+	value, err := p.Client.Type(queueName).Result()
 	if err != nil {
 		return 0, errors.Wrapf(err, "unable to TYPE %s", queueName)
 	}
 
 	switch value {
 	case "zset":
-		res = p.clt.ZCount(queueName, "-inf", "+inf")
+		res = p.Client.ZCount(queueName, "-inf", "+inf")
 	case "list":
-		res = p.clt.LLen(queueName)
+		res = p.Client.LLen(queueName)
 	}
 
 	if res == nil {
@@ -294,11 +294,11 @@ func (p *redisBroker) Count(queueName string) (int, error) {
 }
 
 // Save synchronizes the stored item in redis.
-func (p *redisBroker) Set(taskKey string, data map[string]interface{}, expiration time.Duration) error {
+func (p *RedisBroker) Set(taskKey string, data map[string]interface{}, expiration time.Duration) error {
 	prefixedTaskKey := p.prefixed(taskKey)
 
 	if int(expiration.Seconds()) == 0 {
-		_, err := p.clt.HMSet(prefixedTaskKey, data).Result()
+		_, err := p.Client.HMSet(prefixedTaskKey, data).Result()
 		if err != nil {
 			return errors.Wrapf(err, "unable to HMSET %s", prefixedTaskKey)
 		}
@@ -309,7 +309,7 @@ func (p *redisBroker) Set(taskKey string, data map[string]interface{}, expiratio
 	values := []interface{}{int(expiration.Seconds())}
 	values = append(values, unpack(data)...)
 
-	_, err := p.clt.EvalSha(p.scripts["HMSETEXPIRE"], []string{prefixedTaskKey}, values...).Result()
+	_, err := p.Client.EvalSha(p.scripts["HMSETEXPIRE"], []string{prefixedTaskKey}, values...).Result()
 	if err != nil {
 		return errors.Wrapf(err, "unable to HMSETEXPIRE %s", prefixedTaskKey)
 	}
@@ -320,11 +320,11 @@ func (p *redisBroker) Set(taskKey string, data map[string]interface{}, expiratio
 // Publish publishes raw data.
 // it uses a hash to store the task itself
 // pushes the task id to the list or a zset if the task is delayed.
-func (p *redisBroker) Publish(queueName string, taskPrefix string,
+func (p *RedisBroker) Publish(queueName string, taskPrefix string,
 	taskID string, data map[string]interface{}, eta time.Time) error {
 	prefixedTaskKey := p.prefixed(taskPrefix, taskID)
 
-	_, err := p.clt.Pipelined(func(pipe redis.Pipeliner) error {
+	_, err := p.Client.Pipelined(func(pipe redis.Pipeliner) error {
 		pipe.HMSet(prefixedTaskKey, data)
 
 		if eta.IsZero() {
@@ -352,8 +352,8 @@ func (p *redisBroker) Publish(queueName string, taskPrefix string,
 }
 
 // Empty removes the redis key for a queue.
-func (p *redisBroker) Empty(name string) error {
-	err := p.clt.Del(p.prefixed(name)).Err()
+func (p *RedisBroker) Empty(name string) error {
+	err := p.Client.Del(p.prefixed(name)).Err()
 	if err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "unable to DEL %s", p.prefixed(name))
 	}
@@ -362,8 +362,8 @@ func (p *redisBroker) Empty(name string) error {
 }
 
 // Flush flushes the entire redis database.
-func (p *redisBroker) Flush() error {
-	err := p.clt.FlushDB().Err()
+func (p *RedisBroker) Flush() error {
+	err := p.Client.FlushDB().Err()
 	if err != nil {
 		return errors.Wrap(err, "unable to FLUSHDB")
 	}
@@ -371,4 +371,4 @@ func (p *redisBroker) Flush() error {
 	return nil
 }
 
-var _ Broker = (*redisBroker)(nil)
+var _ Broker = (*RedisBroker)(nil)
