@@ -182,7 +182,7 @@ func (p RedisBroker) prefixed(keys ...interface{}) string {
 func (p *RedisBroker) consumeDelayed(ctx context.Context, name string, duration time.Duration) {
 	p.mu.Lock()
 
-	delayName := fmt.Sprint(name, ":", "delay")
+	delayName := fmt.Sprint(name, ":delay")
 	_, ok := p.queues[delayName]
 	if !ok {
 		go func() {
@@ -191,7 +191,7 @@ func (p *RedisBroker) consumeDelayed(ctx context.Context, name string, duration 
 			for range ticker.C {
 				max := time.Now().UTC()
 
-				results, err := p.Consume(ctx, delayName, max)
+				results, err := p.consume(ctx, delayName, name, max)
 				if err != nil {
 					p.Logger.Error(ctx, "Received error when retrieving delayed payloads",
 						logging.Error(err))
@@ -209,11 +209,6 @@ func (p *RedisBroker) consumeDelayed(ctx context.Context, name string, duration 
 						}
 
 						err := p.publish(pipe, name, taskID, results[i], time.Time{})
-						if err != nil {
-							return err
-						}
-
-						err = p.delete(pipe, delayName, taskID)
 						if err != nil {
 							return err
 						}
@@ -237,8 +232,7 @@ func (p *RedisBroker) consumeDelayed(ctx context.Context, name string, duration 
 
 }
 
-// Consume returns an array of raw data.
-func (p *RedisBroker) Consume(ctx context.Context, name string, eta time.Time) ([]map[string]interface{}, error) {
+func (p *RedisBroker) consume(ctx context.Context, name string, taskPrefix string, eta time.Time) ([]map[string]interface{}, error) {
 	var (
 		err      error
 		result   []string
@@ -277,7 +271,7 @@ func (p *RedisBroker) Consume(ctx context.Context, name string, eta time.Time) (
 			continue
 		}
 
-		taskKeys = append(taskKeys, p.prefixed(name, ":", result[i]))
+		taskKeys = append(taskKeys, p.prefixed(taskPrefix, ":", result[i]))
 	}
 
 	values, err := p.payloadsFromKeys(taskKeys)
@@ -295,6 +289,12 @@ func (p *RedisBroker) Consume(ctx context.Context, name string, eta time.Time) (
 	}
 
 	return results, nil
+}
+
+// Consume returns an array of raw data.
+func (p *RedisBroker) Consume(ctx context.Context, name string, eta time.Time) ([]map[string]interface{}, error) {
+	return p.consume(ctx, name, name, eta)
+
 }
 
 func (p *RedisBroker) payloadsFromKeys(taskKeys []string) (map[string]map[string]interface{}, error) {
@@ -376,32 +376,30 @@ func (p *RedisBroker) List(name string) ([]map[string]interface{}, error) {
 }
 
 // Count returns number of items from a queue name.
-func (p *RedisBroker) Count(queueName string) (int, error) {
+func (p *RedisBroker) Count(queueName string) (BrokerStats, error) {
+	var (
+		stats = BrokerStats{}
+		err   error
+	)
+
 	queueName = p.prefixed(queueName)
-
-	var res *redis.IntCmd
-
-	value, err := p.Client.Type(queueName).Result()
-	if err != nil {
-		return 0, errors.Wrapf(err, "unable to TYPE %s", queueName)
+	direct, err := p.Client.LLen(queueName).Result()
+	if err != nil && err != redis.Nil {
+		return stats, err
 	}
 
-	switch value {
-	case "zset":
-		res = p.Client.ZCount(queueName, "-inf", "+inf")
-	case "list":
-		res = p.Client.LLen(queueName)
+	stats.Direct = int(direct)
+
+	delayed, err := p.Client.ZCount(fmt.Sprint(queueName, ":delay"), "-inf", "+inf").Result()
+	if err != nil && err != redis.Nil {
+		return stats, err
 	}
 
-	if res == nil {
-		return 0, nil
-	}
+	stats.Delayed = int(delayed)
 
-	if res.Err() != nil {
-		return 0, errors.Wrapf(res.Err(), "unable to LEN %s", queueName)
-	}
+	stats.Total = stats.Direct + stats.Delayed
 
-	return int(res.Val()), nil
+	return stats, nil
 }
 
 // Save synchronizes the stored item in redis.
@@ -462,7 +460,7 @@ func (p *RedisBroker) publish(client redis.Cmdable, queueName string,
 			if eta.Before(time.Now().UTC()) {
 				err = client.LPush(p.prefixed(queueName), taskID).Err()
 			} else {
-				err = client.ZAdd(p.prefixed(queueName), redis.Z{
+				err = client.ZAdd(p.prefixed(fmt.Sprint(queueName, ":delay")), redis.Z{
 					Score:  float64(eta.UTC().Unix()),
 					Member: taskID,
 				}).Err()

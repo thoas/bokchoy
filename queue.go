@@ -12,12 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// QueueStats is the statistics returned by a Queue.
-type QueueStats struct {
-	Total  int
-	Direct int
-}
-
 // Queue contains consumers to enqueue.
 type Queue struct {
 	broker Broker
@@ -100,11 +94,6 @@ func (q Queue) Name() string {
 	return q.name
 }
 
-// DelayName returns the delayed queue name.
-func (q Queue) DelayName() string {
-	return fmt.Sprintf("%s:delay", q.name)
-}
-
 // Handle registers a new handler to consume tasks.
 func (q *Queue) Handle(sub Handler, options ...Option) *Queue {
 	return q.HandleFunc(sub.Handle, options...)
@@ -156,7 +145,7 @@ func (q *Queue) start(ctx context.Context) {
 
 // Empty empties queue.
 func (q *Queue) Empty(ctx context.Context) error {
-	queueNames := []string{q.name, q.DelayName()}
+	queueNames := []string{q.name}
 
 	q.logger.Debug(ctx, "Emptying queue...",
 		logging.Object("queue", q))
@@ -230,7 +219,9 @@ func (q *Queue) List(ctx context.Context) ([]*Task, error) {
 // Get returns a task instance from the broker with its id.
 func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 	start := time.Now()
-	results, err := q.broker.Get(q.taskKey(taskID))
+
+	taskKey := q.taskKey(taskID)
+	results, err := q.broker.Get(taskKey)
 	if err != nil {
 		return nil, err
 	}
@@ -255,18 +246,8 @@ func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 // * direct: number of waiting tasks
 // * delayed: number of waiting delayed tasks
 // * total: number of total tasks
-func (q *Queue) Count(ctx context.Context) (QueueStats, error) {
-	var err error
-
-	stats := QueueStats{}
-	stats.Direct, err = q.broker.Count(q.name)
-	if err != nil {
-		return stats, err
-	}
-
-	stats.Total = stats.Direct
-
-	return stats, nil
+func (q *Queue) Count(ctx context.Context) (BrokerStats, error) {
+	return q.broker.Count(q.name)
 }
 
 // Consume returns an array of tasks.
@@ -430,16 +411,9 @@ func (q *Queue) PublishTask(ctx context.Context, task *Task) error {
 		return err
 	}
 
-	queueName := q.name
-
-	// if eta is after now then it should be a delayed task
-	if !task.ETA.IsZero() && task.ETA.After(time.Now().UTC()) {
-		queueName = q.DelayName()
-	}
-
 	start := time.Now()
 
-	err = q.broker.Publish(queueName, task.ID, data, task.ETA)
+	err = q.broker.Publish(q.name, task.ID, data, task.ETA)
 	if err != nil {
 		return errors.Wrapf(err, "unable to publish %s", task)
 	}

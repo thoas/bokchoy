@@ -218,11 +218,11 @@ func (b *Bokchoy) displayOutput(ctx context.Context, queueNames []string) {
 	buf.Write("\n[queues]\n")
 
 	for i := range queueNames {
-		buf.Write(fmt.Sprintf("- %s", queueNames[i]))
+		buf.Write(fmt.Sprintf("- %s\n", queueNames[i]))
 	}
 
 	if len(b.servers) > 0 {
-		buf.Write("\n\n[servers]\n")
+		buf.Write("\n[servers]\n")
 
 		for i := range b.servers {
 			buf.Write(fmt.Sprintf("- %s", b.servers[i]))

@@ -31,7 +31,7 @@ type Broker interface {
 	Flush() error
 
 	// Count returns number of items from a queue name.
-	Count(string) (int, error)
+	Count(string) (BrokerStats, error)
 
 	// Save synchronizes the stored item.
 	Set(string, map[string]interface{}, time.Duration) error
@@ -41,6 +41,13 @@ type Broker interface {
 
 	// Consume returns an array of raw data.
 	Consume(context.Context, string, time.Time) ([]map[string]interface{}, error)
+}
+
+// BrokerStats is the statistics returned by a Queue.
+type BrokerStats struct {
+	Total   int
+	Direct  int
+	Delayed int
 }
 
 // newBroker initializes a new Broker instance.
