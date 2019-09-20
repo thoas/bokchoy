@@ -18,6 +18,12 @@ type Broker interface {
 	// Get returns raw data stored in broker.
 	Get(string) (map[string]interface{}, error)
 
+	// Delete deletes raw data in broker based on key.
+	Delete(string, string) error
+
+	// List returns raw data stored in broker.
+	List(string) ([]map[string]interface{}, error)
+
 	// Empty empties a queue.
 	Empty(string) error
 
@@ -31,10 +37,10 @@ type Broker interface {
 	Set(string, map[string]interface{}, time.Duration) error
 
 	// Publish publishes raw data.
-	Publish(string, string, string, map[string]interface{}, time.Time) error
+	Publish(string, string, map[string]interface{}, time.Time) error
 
 	// Consume returns an array of raw data.
-	Consume(string, string, time.Time) ([]map[string]interface{}, error)
+	Consume(context.Context, string, time.Time) ([]map[string]interface{}, error)
 }
 
 // newBroker initializes a new Broker instance.

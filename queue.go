@@ -14,9 +14,8 @@ import (
 
 // QueueStats is the statistics returned by a Queue.
 type QueueStats struct {
-	Total   int
-	Direct  int
-	Delayed int
+	Total  int
+	Direct int
 }
 
 // Queue contains consumers to enqueue.
@@ -142,34 +141,6 @@ func (q *Queue) HandleFunc(f HandlerFunc, options ...Option) *Queue {
 	return q
 }
 
-// consumeDelayedTasks consumes delayed tasks.
-func (q *Queue) consumeDelayedTasks(ctx context.Context) {
-	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-
-		for range ticker.C {
-			tasks, err := q.ConsumeDelayed(ctx)
-			if err != nil {
-				q.tracer.Log(ctx, "Received error when retrieving delayed tasks", err)
-			}
-
-			for i := range tasks {
-				err := q.PublishTask(ctx, tasks[i])
-				if err != nil {
-					q.logger.Debug(ctx, "Unable to re-publish delayed task",
-						logging.Error(err),
-						logging.Object("queue", q),
-						logging.Object("task", tasks[i]))
-				}
-
-				q.logger.Debug(ctx, "Delayed task re-published",
-					logging.Object("queue", q),
-					logging.Object("task", tasks[i]))
-			}
-		}
-	}()
-}
-
 // start starts consumers.
 func (q *Queue) start(ctx context.Context) {
 	q.logger.Debug(ctx, "Starting consumers...",
@@ -178,8 +149,6 @@ func (q *Queue) start(ctx context.Context) {
 	for i := range q.consumers {
 		q.consumers[i].start(ctx)
 	}
-
-	q.consumeDelayedTasks(ctx)
 
 	q.logger.Debug(ctx, "Consumers started",
 		logging.Object("queue", q))
@@ -226,8 +195,8 @@ func (q *Queue) stop(ctx context.Context) {
 		logging.Object("queue", q))
 }
 
-// TaskKey returns the task key prefixed by the queue name.
-func (q Queue) TaskKey(taskID string) string {
+// taskKey returns the task key prefixed by the queue name.
+func (q Queue) taskKey(taskID string) string {
 	return fmt.Sprintf("%s:%s", q.name, taskID)
 }
 
@@ -248,10 +217,20 @@ func (q *Queue) Cancel(ctx context.Context, taskID string) (*Task, error) {
 	return task, nil
 }
 
+// List returns tasks from the broker.
+func (q *Queue) List(ctx context.Context) ([]*Task, error) {
+	results, err := q.broker.List(q.name)
+	if err != nil {
+		return nil, err
+	}
+
+	return q.payloadsToTasks(ctx, results), nil
+}
+
 // Get returns a task instance from the broker with its id.
 func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 	start := time.Now()
-	results, err := q.broker.Get(q.TaskKey(taskID))
+	results, err := q.broker.Get(q.taskKey(taskID))
 	if err != nil {
 		return nil, err
 	}
@@ -285,32 +264,22 @@ func (q *Queue) Count(ctx context.Context) (QueueStats, error) {
 		return stats, err
 	}
 
-	stats.Delayed, err = q.broker.Count(q.DelayName())
-	if err != nil {
-		return stats, err
-	}
-
-	stats.Total = stats.Direct + stats.Delayed
+	stats.Total = stats.Direct
 
 	return stats, nil
 }
 
-// ConsumeDelayed returns an array of delayed tasks.
-func (q *Queue) ConsumeDelayed(ctx context.Context) ([]*Task, error) {
-	return q.consume(ctx, q.DelayName(), q.name, time.Now().UTC())
-}
-
 // Consume returns an array of tasks.
 func (q *Queue) Consume(ctx context.Context) ([]*Task, error) {
-	return q.consume(ctx, q.name, q.name, time.Time{})
-}
-
-func (q *Queue) consume(ctx context.Context, name string, prefix string, eta time.Time) ([]*Task, error) {
-	results, err := q.broker.Consume(name, fmt.Sprintf("%s:", prefix), eta)
+	results, err := q.broker.Consume(ctx, q.name, time.Time{})
 	if err != nil {
 		return nil, err
 	}
 
+	return q.payloadsToTasks(ctx, results), nil
+}
+
+func (q *Queue) payloadsToTasks(ctx context.Context, results []map[string]interface{}) []*Task {
 	tasks := make([]*Task, 0, len(results))
 
 	for i := range results {
@@ -323,7 +292,7 @@ func (q *Queue) consume(ctx context.Context, name string, prefix string, eta tim
 		tasks = append(tasks, task)
 	}
 
-	return tasks, nil
+	return tasks
 }
 
 // Consumer returns a random consumer.
@@ -468,11 +437,9 @@ func (q *Queue) PublishTask(ctx context.Context, task *Task) error {
 		queueName = q.DelayName()
 	}
 
-	taskPrefix := fmt.Sprintf("%s:", q.name)
-
 	start := time.Now()
 
-	err = q.broker.Publish(queueName, taskPrefix, task.ID, data, task.ETA)
+	err = q.broker.Publish(queueName, task.ID, data, task.ETA)
 	if err != nil {
 		return errors.Wrapf(err, "unable to publish %s", task)
 	}
