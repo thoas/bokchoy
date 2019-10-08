@@ -13,7 +13,7 @@ It currently only supports [Redis](broker_redis.go)
 (client, sentinel and cluster) with some Lua magic, but internally it relies on a generic
 broker implementation to extends it.
 
-![screen](https://d2aztkdj0ezvrk.cloudfront.net/items/0f3I270J0v0C09032l0B/screen.gif)
+![screen](https://d1sz9tkli0lfjq.cloudfront.net/items/1a2w0d2g1N0T0z1u261j/screen.gif?v=871e2898)
 
 ## Motivation
 
