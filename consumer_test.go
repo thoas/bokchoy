@@ -36,9 +36,7 @@ func TestConsumer_Consume(t *testing.T) {
 			ctx := r.Context()
 
 			bokchoy.GetContextTask(ctx)
-
-			bokchoy.WithContextAfterRequestFunc(ctx, func() {
-			})
+			bokchoy.WithContextAfterRequestFunc(ctx, func() {})
 
 			return nil
 		}, bokchoy.WithConcurrency(1))
