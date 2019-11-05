@@ -10,6 +10,16 @@ import (
 	"github.com/thoas/bokchoy/middleware"
 )
 
+type suiteServer struct {
+}
+
+func (s suiteServer) Start(context.Context) error {
+	return nil
+}
+
+func (s suiteServer) Stop(context.Context) {
+}
+
 type suite struct {
 	bokchoy *bokchoy.Bokchoy
 }
@@ -42,7 +52,11 @@ func run(t *testing.T, f FuncTest) {
 				Name: "tests.task.message",
 			},
 		},
-	}, bokchoy.WithLogger(logger.With(logging.String("logger", "bokchoy"))))
+	},
+		bokchoy.WithQueues([]string{"tasks.message"}),
+		bokchoy.WithServers([]bokchoy.Server{suiteServer{}}),
+		bokchoy.WithLogger(logger.With(logging.String("logger", "bokchoy"))))
+
 	bok.Use(middleware.RequestID)
 	bok.Use(middleware.Recoverer)
 

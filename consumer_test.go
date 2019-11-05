@@ -33,6 +33,13 @@ func TestConsumer_Consume(t *testing.T) {
 
 			ticker <- struct{}{}
 
+			ctx := r.Context()
+
+			bokchoy.GetContextTask(ctx)
+
+			bokchoy.WithContextAfterRequestFunc(ctx, func() {
+			})
+
 			return nil
 		}, bokchoy.WithConcurrency(1))
 		consumer := &noopconsumer{}
@@ -42,7 +49,7 @@ func TestConsumer_Consume(t *testing.T) {
 			OnSuccess(consumer)
 
 		go func() {
-			err := s.bokchoy.Run(ctx)
+			err := s.bokchoy.Run(ctx, bokchoy.WithQueues([]string{"tests.task.info"}))
 			is.NoError(err)
 		}()
 
