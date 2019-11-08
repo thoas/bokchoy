@@ -5,4 +5,3 @@ services:
   - redis-server
 script:
   - make test
-  - make lint
