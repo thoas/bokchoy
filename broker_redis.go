@@ -335,7 +335,7 @@ func (p *RedisBroker) Publish(queueName string, taskPrefix string,
 			if eta.Before(time.Now().UTC()) {
 				pipe.LPush(p.prefixed(queueName), taskID)
 			} else {
-				pipe.ZAdd(p.prefixed(queueName), redis.Z{
+				pipe.ZAdd(p.prefixed(queueName), &redis.Z{
 					Score:  float64(eta.UTC().Unix()),
 					Member: taskID,
 				})
