@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var entropy = rand.New(rand.NewSource(time.Now().UnixNano()))
-
 func id() string {
+	t := time.Unix(1000000, 0)
+	entropy := ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
 	return ulid.MustNew(ulid.Now(), entropy).String()
 }
 
