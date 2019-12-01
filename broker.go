@@ -18,6 +18,12 @@ type Broker interface {
 	// Get returns raw data stored in broker.
 	Get(string) (map[string]interface{}, error)
 
+	// Delete deletes raw data in broker based on key.
+	Delete(string, string) error
+
+	// List returns raw data stored in broker.
+	List(string) ([]map[string]interface{}, error)
+
 	// Empty empties a queue.
 	Empty(string) error
 
@@ -25,16 +31,23 @@ type Broker interface {
 	Flush() error
 
 	// Count returns number of items from a queue name.
-	Count(string) (int, error)
+	Count(string) (BrokerStats, error)
 
 	// Save synchronizes the stored item.
 	Set(string, map[string]interface{}, time.Duration) error
 
 	// Publish publishes raw data.
-	Publish(string, string, string, map[string]interface{}, time.Time) error
+	Publish(string, string, map[string]interface{}, time.Time) error
 
 	// Consume returns an array of raw data.
-	Consume(string, string, time.Time) ([]map[string]interface{}, error)
+	Consume(context.Context, string, time.Time) ([]map[string]interface{}, error)
+}
+
+// BrokerStats is the statistics returned by a Queue.
+type BrokerStats struct {
+	Total   int
+	Direct  int
+	Delayed int
 }
 
 // newBroker initializes a new Broker instance.

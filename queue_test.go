@@ -67,9 +67,8 @@ func TestQueue_Publish(t *testing.T) {
 		is.NoError(err)
 		stats, err := queue.Count(ctx)
 		is.NoError(err)
-		is.Equal(stats.Total, 1)
-		is.Equal(stats.Direct, 1)
-		is.Equal(stats.Delayed, 0)
+		is.Equal(1, stats.Total)
+		is.Equal(1, stats.Direct)
 		is.Nil(err)
 		is.NotZero(task1)
 		is.Equal(task1.Name, queue.Name())
@@ -83,9 +82,8 @@ func TestQueue_Publish(t *testing.T) {
 		is.NoError(err)
 		is.NotZero(task2.ETA)
 
-		is.Equal(stats.Delayed, 1)
-		is.Equal(stats.Total, 1)
-		is.Equal(stats.Direct, 0)
+		is.Equal(1, stats.Total)
+		is.Equal(0, stats.Direct)
 		is.NotZero(task2)
 		is.Equal(task2.Name, queue.Name())
 

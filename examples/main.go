@@ -72,6 +72,16 @@ func main() {
 	}
 
 	switch run {
+	case "list":
+		tasks, err := queue.List(ctx)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for i := range tasks {
+			log.Printf("%s retrieved", tasks[i])
+		}
 	case "get":
 		task, err := queue.Get(ctx, taskID)
 
@@ -108,7 +118,7 @@ func main() {
 		}
 
 		task, err := queue.Publish(ctx, message{Data: "hello"},
-			bokchoy.WithCountdown(15*time.Second))
+			bokchoy.WithCountdown(5*time.Second))
 		if err != nil {
 			log.Fatal(err)
 		}
