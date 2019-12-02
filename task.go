@@ -48,7 +48,7 @@ func NewTask(name string, payload interface{}, options ...Option) *Task {
 	}
 
 	t := &Task{
-		ID:          id(),
+		ID:          ID(),
 		Name:        name,
 		Payload:     payload,
 		Status:      taskStatusWaiting,

@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func id() string {
-	t := time.Unix(1000000, 0)
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
-	return ulid.MustNew(ulid.Now(), entropy).String()
+func ID() string {
+	t := time.Now().UTC()
+	entropy := rand.New(rand.NewSource(t.UnixNano()))
+	return ulid.MustNew(ulid.Timestamp(t), entropy).String()
 }
 
 func reverseDurations(durations []time.Duration) []time.Duration {
