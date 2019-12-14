@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/thoas/bokchoy"
 	bokchoysentry "github.com/thoas/bokchoy/contrib/sentry"
 	"github.com/thoas/bokchoy/middleware"
