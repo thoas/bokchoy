@@ -74,7 +74,7 @@ return cjson.encode(data)`,
 }
 
 // newRedisBroker initializes a new redis client.
-func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger) *RedisBroker {
+func newRedisBroker(cfg RedisConfig, logger logging.Logger) *RedisBroker {
 	var clt redisClient
 
 	switch cfg.Type {
@@ -128,10 +128,15 @@ func newRedisBroker(ctx context.Context, cfg RedisConfig, logger logging.Logger)
 
 	}
 
+	return NewRedisBroker(clt, cfg.Type, cfg.Prefix, logger)
+}
+
+// NewRedisBroker initializes a new redis broker instance.
+func NewRedisBroker(clt redisClient, clientType string, prefix string, logger logging.Logger) *RedisBroker {
 	return &RedisBroker{
-		ClientType: cfg.Type,
+		ClientType: clientType,
 		Client:     clt,
-		Prefix:     cfg.Prefix,
+		Prefix:     prefix,
 		Logger:     logger,
 		queues:     make(map[string]struct{}),
 		mu:         &sync.Mutex{},

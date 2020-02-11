@@ -72,7 +72,7 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 	if opts.Broker != nil {
 		bok.broker = opts.Broker
 	} else {
-		bok.broker = newBroker(ctx, cfg.Broker,
+		bok.broker = newBroker(cfg.Broker,
 			logger.With(logging.String("component", "broker")))
 	}
 

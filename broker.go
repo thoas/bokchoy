@@ -51,14 +51,14 @@ type BrokerStats struct {
 }
 
 // newBroker initializes a new Broker instance.
-func newBroker(ctx context.Context, cfg BrokerConfig, logger logging.Logger) Broker {
+func newBroker(cfg BrokerConfig, logger logging.Logger) Broker {
 	var (
 		broker Broker
 	)
 
 	switch cfg.Type {
 	default:
-		broker = newRedisBroker(ctx, cfg.Redis, logger)
+		broker = newRedisBroker(cfg.Redis, logger)
 	}
 
 	return broker
