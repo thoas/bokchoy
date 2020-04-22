@@ -10,7 +10,7 @@ import (
 
 	"github.com/thoas/bokchoy/logging"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
 )
 
@@ -254,7 +254,7 @@ func (p *RedisBroker) consume(ctx context.Context, name string, taskPrefix strin
 		}
 	} else {
 		max := fmt.Sprintf("%d", eta.UTC().Unix())
-		results := p.Client.ZRangeByScore(queueKey, redis.ZRangeBy{
+		results := p.Client.ZRangeByScore(queueKey, &redis.ZRangeBy{
 			Min: "0",
 			Max: max,
 		})
@@ -465,7 +465,7 @@ func (p *RedisBroker) publish(client redis.Cmdable, queueName string,
 			if eta.Before(time.Now().UTC()) {
 				err = client.LPush(p.prefixed(queueName), taskID).Err()
 			} else {
-				err = client.ZAdd(p.prefixed(fmt.Sprint(queueName, ":delay")), redis.Z{
+				err = client.ZAdd(p.prefixed(fmt.Sprint(queueName, ":delay")), &redis.Z{
 					Score:  float64(eta.UTC().Unix()),
 					Member: taskID,
 				}).Err()
