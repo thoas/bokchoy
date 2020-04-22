@@ -1,6 +1,6 @@
 package bokchoy
 
-import "github.com/go-redis/redis"
+import "github.com/go-redis/redis/v7"
 
 // RedisClusterConfig contains the redis cluster configuration.
 type RedisClusterConfig redis.ClusterOptions

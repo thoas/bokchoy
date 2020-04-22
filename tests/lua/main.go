@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 )
 
 var multihgetall = `local collate = function (key)
