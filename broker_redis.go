@@ -14,14 +14,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-type redisClient interface {
-	redis.UniversalClient
-}
-
 // RedisBroker is the redis broker.
 type RedisBroker struct {
 	ClientType string
-	Client     redisClient
+	Client     redis.UniversalClient
 	Prefix     string
 	Logger     logging.Logger
 	scripts    map[string]string
@@ -75,7 +71,7 @@ return cjson.encode(data)`,
 
 // newRedisBroker initializes a new redis client.
 func newRedisBroker(cfg RedisConfig, logger logging.Logger) *RedisBroker {
-	var clt redisClient
+	var clt redis.UniversalClient
 
 	switch cfg.Type {
 	case redisTypeSentinel:
@@ -132,7 +128,7 @@ func newRedisBroker(cfg RedisConfig, logger logging.Logger) *RedisBroker {
 }
 
 // NewRedisBroker initializes a new redis broker instance.
-func NewRedisBroker(clt redisClient, clientType string, prefix string, logger logging.Logger) *RedisBroker {
+func NewRedisBroker(clt redis.UniversalClient, clientType string, prefix string, logger logging.Logger) *RedisBroker {
 	return &RedisBroker{
 		ClientType: clientType,
 		Client:     clt,
