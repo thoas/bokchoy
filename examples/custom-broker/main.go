@@ -20,13 +20,12 @@ func main() {
 	clt := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
+	
+	// define a new Redis broker with the 'tasks' prefix
+	bkr := bokchoy.NewRedisBroker(clt, "client", "tasks", logger)
 
 	// define the main engine which will manage queues
-	engine, err := bokchoy.New(ctx, bokchoy.Config{}, bokchoy.WithBroker(&bokchoy.RedisBroker{
-		Client:     clt,
-		ClientType: "client",
-		Logger:     logger,
-	}))
+	engine, err := bokchoy.New(ctx, bokchoy.Config{}, bokchoy.WithBroker(bkr))
 	if err != nil {
 		log.Fatal(err)
 	}
