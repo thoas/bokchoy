@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/thoas/bokchoy/logging"
 	"github.com/thoas/go-funk"
 
@@ -92,6 +93,27 @@ func New(ctx context.Context, cfg Config, options ...Option) (*Bokchoy, error) {
 	}
 
 	return bok, nil
+}
+
+// NewDefault initializes a new Bokchoy instance for the most common scenario.
+func NewDefault(ctx context.Context, redisURL string) (*Bokchoy, error) {
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse redis url")
+	}
+	return New(ctx, Config{
+		Broker: BrokerConfig{
+			Type: "redis",
+			Redis: RedisConfig{
+				Type: "client",
+				Client: RedisClientConfig{
+					Addr:     opt.Addr,
+					Password: opt.Password,
+					DB:       opt.DB,
+				},
+			},
+		},
+	})
 }
 
 // Use append a new middleware to the system.
