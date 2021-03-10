@@ -104,6 +104,9 @@ func newRedisBroker(cfg RedisConfig, logger logging.Logger) *RedisBroker {
 			MinIdleConns:       cfg.Cluster.MinIdleConns,
 			MaxConnAge:         cfg.Cluster.MaxConnAge,
 			IdleCheckFrequency: cfg.Cluster.IdleCheckFrequency,
+			ReadOnly:           false,
+			RouteRandomly:      false,
+			RouteByLatency:     false,
 		})
 	default:
 		clt = redis.NewClient(&redis.Options{
