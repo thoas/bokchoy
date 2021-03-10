@@ -57,17 +57,7 @@ func main() {
 	ctx := context.Background()
 
 	// define the main engine which will manage queues
-	engine, err := bokchoy.New(ctx, bokchoy.Config{
-		Broker: bokchoy.BrokerConfig{
-			Type: "redis",
-			Redis: bokchoy.RedisConfig{
-				Type: "client",
-				Client: bokchoy.RedisClientConfig{
-					Addr: "localhost:6379",
-				},
-			},
-		},
-	})
+	engine, err := bokchoy.NewDefault(ctx, "redis://localhost:6379")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,17 +96,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	engine, err := bokchoy.New(ctx, bokchoy.Config{
-		Broker: bokchoy.BrokerConfig{
-			Type: "redis",
-			Redis: bokchoy.RedisConfig{
-				Type: "client",
-				Client: bokchoy.RedisClientConfig{
-					Addr: "localhost:6379",
-				},
-			},
-		},
-	})
+	engine, err := bokchoy.NewDefault(ctx, "redis://localhost:6379")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -196,6 +176,29 @@ queue.Publish(ctx, payload, bokchoy.WithCountdown(-1))
 ```
 
 This task will be published and processed immediately.
+
+### Custom instantiation
+
+`bokchoy.NewDefault` allows simple instantiation when you have a simple setup. You may
+want to have more control over your setup. This allows you to use a customer serializer,
+custom logger, etc. Use `bokchoy.New` to do this:
+
+```go
+bokchoy.New(ctx, bokchoy.Config{
+    Broker: bokchoy.BrokerConfig{
+        Type: "redis",
+        Redis: bokchoy.RedisConfig{
+            Type: "client",
+            Client: bokchoy.RedisClientConfig{
+                Addr: "localhost:6379",
+            },
+        },
+    },
+})
+```
+
+**Note**: `bokchoy.NewDefault` uses `redis.ParseURL` internally so it can handle connection
+strings like `redis://user:pass@host:port/db` without the need for `bokchoy.New`.
 
 ### Custom serializer
 
