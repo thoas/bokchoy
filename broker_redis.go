@@ -123,6 +123,7 @@ func newRedisBroker(cfg RedisConfig, logger logging.Logger) *RedisBroker {
 			MinIdleConns:       cfg.Client.MinIdleConns,
 			MaxConnAge:         cfg.Client.MaxConnAge,
 			IdleCheckFrequency: cfg.Client.IdleCheckFrequency,
+			TLSConfig:          cfg.Client.TLSConfig,
 		})
 
 	}
