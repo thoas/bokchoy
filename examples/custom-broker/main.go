@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/thoas/bokchoy"
 	"github.com/thoas/bokchoy/logging"
@@ -20,7 +20,7 @@ func main() {
 	clt := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	
+
 	// define a new Redis broker with the 'tasks' prefix
 	bkr := bokchoy.NewRedisBroker(clt, "client", "tasks", logger)
 

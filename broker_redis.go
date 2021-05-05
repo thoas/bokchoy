@@ -10,7 +10,7 @@ import (
 
 	"github.com/thoas/bokchoy/logging"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
 
@@ -149,14 +149,14 @@ func (p RedisBroker) String() string {
 
 // Initialize initializes the redis broker.
 func (p *RedisBroker) Initialize(ctx context.Context) error {
-	err := p.Client.Ping().Err()
+	err := p.Client.Ping(ctx).Err()
 	if err != nil {
 		return err
 	}
 
 	p.scripts = make(map[string]string)
 	for key := range redisScripts {
-		sha, err := p.Client.ScriptLoad(redisScripts[key]).Result()
+		sha, err := p.Client.ScriptLoad(ctx, redisScripts[key]).Result()
 		if err != nil {
 			return errors.Wrapf(err, "Unable to load script %s", key)
 		}
@@ -168,8 +168,8 @@ func (p *RedisBroker) Initialize(ctx context.Context) error {
 }
 
 // Ping pings the redis broker to ensure it's well connected.
-func (p RedisBroker) Ping() error {
-	_, err := p.Client.Ping().Result()
+func (p RedisBroker) Ping(ctx context.Context) error {
+	_, err := p.Client.Ping(ctx).Result()
 	if err != nil {
 		return errors.Wrapf(err, "unable to ping redis %s", p.ClientType)
 	}
@@ -206,21 +206,21 @@ func (p *RedisBroker) consumeDelayed(ctx context.Context, name string, duration 
 					continue
 				}
 
-				_, err = p.Client.TxPipelined(func(pipe redis.Pipeliner) error {
+				_, err = p.Client.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 					for i := range results {
 						taskID, ok := results[i]["id"].(string)
 						if !ok {
 							continue
 						}
 
-						err := p.publish(pipe, name, taskID, results[i], time.Time{})
+						err := p.publish(ctx, pipe, name, taskID, results[i], time.Time{})
 						if err != nil {
 							return err
 						}
 					}
 
 					// To avoid data loss, we only remove the range when results are processed
-					_, err = pipe.ZRemRangeByScore(delayName, "0", fmt.Sprintf("%d", max.Unix())).Result()
+					_, err = pipe.ZRemRangeByScore(ctx, delayName, "0", fmt.Sprintf("%d", max.Unix())).Result()
 					if err != nil {
 						return err
 					}
@@ -247,14 +247,14 @@ func (p *RedisBroker) consume(ctx context.Context, name string, taskPrefix strin
 	if eta.IsZero() {
 		p.consumeDelayed(ctx, name, 1*time.Second)
 
-		result, err = p.Client.BRPop(1*time.Second, queueKey).Result()
+		result, err = p.Client.BRPop(ctx, 1*time.Second, queueKey).Result()
 
 		if err != nil && err != redis.Nil {
 			return nil, errors.Wrapf(err, "unable to BRPOP %s", queueKey)
 		}
 	} else {
 		max := fmt.Sprintf("%d", eta.UTC().Unix())
-		results := p.Client.ZRangeByScore(queueKey, &redis.ZRangeBy{
+		results := p.Client.ZRangeByScore(ctx, queueKey, &redis.ZRangeBy{
 			Min: "0",
 			Max: max,
 		})
@@ -279,7 +279,7 @@ func (p *RedisBroker) consume(ctx context.Context, name string, taskPrefix strin
 		taskKeys = append(taskKeys, p.prefixed(taskPrefix, ":", result[i]))
 	}
 
-	values, err := p.payloadsFromKeys(taskKeys)
+	values, err := p.payloadsFromKeys(ctx, taskKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -302,8 +302,8 @@ func (p *RedisBroker) Consume(ctx context.Context, name string, eta time.Time) (
 
 }
 
-func (p *RedisBroker) payloadsFromKeys(taskKeys []string) (map[string]map[string]interface{}, error) {
-	vals, err := p.Client.EvalSha(p.scripts["MULTIHGETALL"], taskKeys).Result()
+func (p *RedisBroker) payloadsFromKeys(ctx context.Context, taskKeys []string) (map[string]map[string]interface{}, error) {
+	vals, err := p.Client.EvalSha(ctx, p.scripts["MULTIHGETALL"], taskKeys).Result()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to MULTIHGETALL %s", strings.Join(taskKeys, ", "))
 	}
@@ -318,10 +318,10 @@ func (p *RedisBroker) payloadsFromKeys(taskKeys []string) (map[string]map[string
 }
 
 // Get returns stored raw data from task key.
-func (p *RedisBroker) Get(taskKey string) (map[string]interface{}, error) {
+func (p *RedisBroker) Get(ctx context.Context, taskKey string) (map[string]interface{}, error) {
 	taskKey = p.prefixed(taskKey)
 
-	res, err := p.Client.HGetAll(taskKey).Result()
+	res, err := p.Client.HGetAll(ctx, taskKey).Result()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to HGETALL %s", taskKey)
 	}
@@ -335,16 +335,16 @@ func (p *RedisBroker) Get(taskKey string) (map[string]interface{}, error) {
 }
 
 // Delete deletes raw data in broker based on key.
-func (p *RedisBroker) Delete(name string, taskID string) error {
-	return p.delete(p.Client, name, taskID)
+func (p *RedisBroker) Delete(ctx context.Context, name string, taskID string) error {
+	return p.delete(ctx, p.Client, name, taskID)
 }
 
-func (p *RedisBroker) delete(client redis.Cmdable, name string, taskID string) error {
+func (p *RedisBroker) delete(ctx context.Context, client redis.Cmdable, name string, taskID string) error {
 	var (
 		prefixedTaskKey = p.prefixed(name, ":", taskID)
 	)
 
-	_, err := client.Del(prefixedTaskKey).Result()
+	_, err := client.Del(ctx, prefixedTaskKey).Result()
 	if err != nil {
 		return errors.Wrapf(err, "unable to DEL %s", prefixedTaskKey)
 	}
@@ -352,8 +352,8 @@ func (p *RedisBroker) delete(client redis.Cmdable, name string, taskID string) e
 	return nil
 }
 
-func (p *RedisBroker) List(name string) ([]map[string]interface{}, error) {
-	taskIDs, err := p.Client.LRange(name, 0, -1).Result()
+func (p *RedisBroker) List(ctx context.Context, name string) ([]map[string]interface{}, error) {
+	taskIDs, err := p.Client.LRange(ctx, name, 0, -1).Result()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to LRANGE %s", name)
 	}
@@ -363,7 +363,7 @@ func (p *RedisBroker) List(name string) ([]map[string]interface{}, error) {
 		taskKeys = append(taskKeys, p.prefixed(name, ":", taskIDs[i]))
 	}
 
-	payloads, err := p.payloadsFromKeys(taskKeys)
+	payloads, err := p.payloadsFromKeys(ctx, taskKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -381,21 +381,21 @@ func (p *RedisBroker) List(name string) ([]map[string]interface{}, error) {
 }
 
 // Count returns number of items from a queue name.
-func (p *RedisBroker) Count(queueName string) (BrokerStats, error) {
+func (p *RedisBroker) Count(ctx context.Context, queueName string) (BrokerStats, error) {
 	var (
 		stats = BrokerStats{}
 		err   error
 	)
 
 	queueName = p.prefixed(queueName)
-	direct, err := p.Client.LLen(queueName).Result()
+	direct, err := p.Client.LLen(ctx, queueName).Result()
 	if err != nil && err != redis.Nil {
 		return stats, err
 	}
 
 	stats.Direct = int(direct)
 
-	delayed, err := p.Client.ZCount(fmt.Sprint(queueName, ":delay"), "-inf", "+inf").Result()
+	delayed, err := p.Client.ZCount(ctx, fmt.Sprint(queueName, ":delay"), "-inf", "+inf").Result()
 	if err != nil && err != redis.Nil {
 		return stats, err
 	}
@@ -408,11 +408,11 @@ func (p *RedisBroker) Count(queueName string) (BrokerStats, error) {
 }
 
 // Save synchronizes the stored item in redis.
-func (p *RedisBroker) Set(taskKey string, data map[string]interface{}, expiration time.Duration) error {
+func (p *RedisBroker) Set(ctx context.Context, taskKey string, data map[string]interface{}, expiration time.Duration) error {
 	prefixedTaskKey := p.prefixed(taskKey)
 
 	if int(expiration.Seconds()) == 0 {
-		_, err := p.Client.HMSet(prefixedTaskKey, data).Result()
+		_, err := p.Client.HMSet(ctx, prefixedTaskKey, data).Result()
 		if err != nil {
 			return errors.Wrapf(err, "unable to HMSET %s", prefixedTaskKey)
 		}
@@ -423,7 +423,7 @@ func (p *RedisBroker) Set(taskKey string, data map[string]interface{}, expiratio
 	values := []interface{}{int(expiration.Seconds())}
 	values = append(values, unpack(data)...)
 
-	_, err := p.Client.EvalSha(p.scripts["HMSETEXPIRE"], []string{prefixedTaskKey}, values...).Result()
+	_, err := p.Client.EvalSha(ctx, p.scripts["HMSETEXPIRE"], []string{prefixedTaskKey}, values...).Result()
 	if err != nil {
 		return errors.Wrapf(err, "unable to HMSETEXPIRE %s", prefixedTaskKey)
 	}
@@ -434,11 +434,11 @@ func (p *RedisBroker) Set(taskKey string, data map[string]interface{}, expiratio
 // Publish publishes raw data.
 // it uses a hash to store the task itself
 // pushes the task id to the list or a zset if the task is delayed.
-func (p *RedisBroker) Publish(queueName string,
+func (p *RedisBroker) Publish(ctx context.Context, queueName string,
 	taskID string, data map[string]interface{}, eta time.Time) error {
 
-	_, err := p.Client.Pipelined(func(pipe redis.Pipeliner) error {
-		return p.publish(pipe, queueName, taskID, data, eta)
+	_, err := p.Client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		return p.publish(ctx, pipe, queueName, taskID, data, eta)
 	})
 	if err != nil {
 		return err
@@ -447,7 +447,7 @@ func (p *RedisBroker) Publish(queueName string,
 	return nil
 }
 
-func (p *RedisBroker) publish(client redis.Cmdable, queueName string,
+func (p *RedisBroker) publish(ctx context.Context, client redis.Cmdable, queueName string,
 	taskID string, data map[string]interface{}, eta time.Time) error {
 
 	var (
@@ -455,17 +455,17 @@ func (p *RedisBroker) publish(client redis.Cmdable, queueName string,
 		err             error
 	)
 
-	err = client.HMSet(prefixedTaskKey, data).Err()
+	err = client.HMSet(ctx, prefixedTaskKey, data).Err()
 	if err == nil {
 		if eta.IsZero() {
-			err = client.RPush(p.prefixed(queueName), taskID).Err()
+			err = client.RPush(ctx, p.prefixed(queueName), taskID).Err()
 		} else {
 			// if eta is before now, then we should push this
 			// taskID in priority
 			if eta.Before(time.Now().UTC()) {
-				err = client.LPush(p.prefixed(queueName), taskID).Err()
+				err = client.LPush(ctx, p.prefixed(queueName), taskID).Err()
 			} else {
-				err = client.ZAdd(p.prefixed(fmt.Sprint(queueName, ":delay")), &redis.Z{
+				err = client.ZAdd(ctx, p.prefixed(fmt.Sprint(queueName, ":delay")), &redis.Z{
 					Score:  float64(eta.UTC().Unix()),
 					Member: taskID,
 				}).Err()
@@ -480,8 +480,8 @@ func (p *RedisBroker) publish(client redis.Cmdable, queueName string,
 }
 
 // Empty removes the redis key for a queue.
-func (p *RedisBroker) Empty(name string) error {
-	err := p.Client.Del(p.prefixed(name)).Err()
+func (p *RedisBroker) Empty(ctx context.Context, name string) error {
+	err := p.Client.Del(ctx, p.prefixed(name)).Err()
 	if err != nil && err != redis.Nil {
 		return errors.Wrapf(err, "unable to DEL %s", p.prefixed(name))
 	}
@@ -490,8 +490,8 @@ func (p *RedisBroker) Empty(name string) error {
 }
 
 // Flush flushes the entire redis database.
-func (p *RedisBroker) Flush() error {
-	err := p.Client.FlushDB().Err()
+func (p *RedisBroker) Flush(ctx context.Context) error {
+	err := p.Client.FlushDB(ctx).Err()
 	if err != nil {
 		return errors.Wrap(err, "unable to FLUSHDB")
 	}

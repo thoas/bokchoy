@@ -151,7 +151,7 @@ func (q *Queue) Empty(ctx context.Context) error {
 		logging.Object("queue", q))
 
 	for i := range queueNames {
-		err := q.broker.Empty(queueNames[i])
+		err := q.broker.Empty(ctx, queueNames[i])
 		if err != nil {
 			return errors.Wrapf(err, "unable to empty queue %s", queueNames[i])
 		}
@@ -208,7 +208,7 @@ func (q *Queue) Cancel(ctx context.Context, taskID string) (*Task, error) {
 
 // List returns tasks from the broker.
 func (q *Queue) List(ctx context.Context) ([]*Task, error) {
-	results, err := q.broker.List(q.name)
+	results, err := q.broker.List(ctx, q.name)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 	start := time.Now()
 
 	taskKey := q.taskKey(taskID)
-	results, err := q.broker.Get(taskKey)
+	results, err := q.broker.Get(ctx, taskKey)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (q *Queue) Get(ctx context.Context, taskID string) (*Task, error) {
 // * delayed: number of waiting delayed tasks
 // * total: number of total tasks
 func (q *Queue) Count(ctx context.Context) (BrokerStats, error) {
-	return q.broker.Count(q.name)
+	return q.broker.Count(ctx, q.name)
 }
 
 // Consume returns an array of tasks.
@@ -347,9 +347,9 @@ func (q *Queue) Save(ctx context.Context, task *Task) error {
 	}
 
 	if task.Finished() {
-		err = q.broker.Set(task.Key(), data, task.TTL)
+		err = q.broker.Set(ctx, task.Key(), data, task.TTL)
 	} else {
-		err = q.broker.Set(task.Key(), data, 0)
+		err = q.broker.Set(ctx, task.Key(), data, 0)
 	}
 
 	if err != nil {
@@ -413,7 +413,7 @@ func (q *Queue) PublishTask(ctx context.Context, task *Task) error {
 
 	start := time.Now()
 
-	err = q.broker.Publish(q.name, task.ID, data, task.ETA)
+	err = q.broker.Publish(ctx, q.name, task.ID, data, task.ETA)
 	if err != nil {
 		return errors.Wrapf(err, "unable to publish %s", task)
 	}
