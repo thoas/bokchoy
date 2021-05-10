@@ -2,7 +2,9 @@ package bokchoy_test
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/thoas/bokchoy"
@@ -37,13 +39,15 @@ func run(t *testing.T, f FuncTest) {
 
 	ctx := context.Background()
 
+	addr := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+
 	bok, err := bokchoy.New(ctx, bokchoy.Config{
 		Broker: bokchoy.BrokerConfig{
 			Type: "redis",
 			Redis: bokchoy.RedisConfig{
 				Type: "client",
 				Client: bokchoy.RedisClientConfig{
-					Addr: "localhost:6379",
+					Addr: addr,
 				},
 			},
 		},
@@ -56,6 +60,9 @@ func run(t *testing.T, f FuncTest) {
 		bokchoy.WithQueues([]string{"tasks.message"}),
 		bokchoy.WithServers([]bokchoy.Server{suiteServer{}}),
 		bokchoy.WithLogger(logger.With(logging.String("logger", "bokchoy"))))
+	if err != nil {
+		panic(err)
+	}
 
 	bok.Use(middleware.RequestID)
 	bok.Use(middleware.Recoverer)
