@@ -1,7 +1,0 @@
-language: go
-go:
-  - "1.13"
-services:
-  - redis-server
-script:
-  - make test
