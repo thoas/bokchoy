@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/thoas/bokchoy/logging"
 	"github.com/thoas/go-funk"
 
@@ -136,8 +136,8 @@ func (b *Bokchoy) Empty(ctx context.Context) error {
 }
 
 // Flush flushes data of the entire system.
-func (b *Bokchoy) Flush() error {
-	return b.broker.Flush()
+func (b *Bokchoy) Flush(ctx context.Context) error {
+	return b.broker.Flush(ctx)
 }
 
 // Queue gets or creates a new queue.
@@ -265,7 +265,7 @@ func (b *Bokchoy) Run(ctx context.Context, options ...Option) error {
 		b.servers = opts.Servers
 	}
 
-	err := b.broker.Ping()
+	err := b.broker.Ping(ctx)
 	if err != nil {
 		return err
 	}

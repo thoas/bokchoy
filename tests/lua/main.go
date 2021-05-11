@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 )
 
 var multihgetall = `local collate = function (key)
@@ -47,14 +48,17 @@ func main() {
 		DB:       0,  // use default DB
 	})
 
-	var results map[string]map[string]interface{}
+	var (
+		results map[string]map[string]interface{}
+		ctx     context.Context
+	)
 
-	sha, err := client.ScriptLoad(multihgetall).Result()
+	sha, err := client.ScriptLoad(ctx, multihgetall).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	vals, err := client.EvalSha(sha, []string{"foo"}).Result()
+	vals, err := client.EvalSha(ctx, sha, []string{"foo"}).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,12 +70,12 @@ func main() {
 
 	spew.Dump(results)
 
-	sha, err = client.ScriptLoad(script).Result()
+	sha, err = client.ScriptLoad(ctx, script).Result()
 	spew.Dump(sha, err)
 
-	vals, err = client.Eval("return {KEYS[1],ARGV[1]}", []string{"key"}, "hello").Result()
+	vals, err = client.Eval(ctx, "return {KEYS[1],ARGV[1]}", []string{"key"}, "hello").Result()
 	spew.Dump(vals, err)
 
-	vals, err = client.EvalSha(sha, nil, "myzset", "-inf", "+inf").Result()
+	vals, err = client.EvalSha(ctx, sha, nil, "myzset", "-inf", "+inf").Result()
 	spew.Dump(vals, err)
 }

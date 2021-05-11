@@ -56,7 +56,7 @@ func (h *CrawlHandler) Crawls() []string {
 	h.mu.RLock()
 	crawls := make([]string, len(h.crawls))
 	i := 0
-	for url, _ := range h.crawls {
+	for url := range h.crawls {
 		crawls[i] = url
 		i++
 	}
