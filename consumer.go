@@ -136,6 +136,8 @@ func (c *consumer) handleError(ctx context.Context, task *Task, err error) error
 	if task.MaxRetries == 0 {
 		c.logger.Debug(ctx, "Task marked as failed: no retry", logging.Object("task", task))
 
+		task.MaxRetries -= 1
+
 		err = c.queue.Save(ctx, task)
 		if err != nil {
 			return errors.Wrapf(err, "unable to handle error %s", task)
