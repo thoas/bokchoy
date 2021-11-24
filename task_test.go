@@ -36,7 +36,7 @@ func TestTask_Finished(t *testing.T) {
 	task.MarkAsSucceeded()
 	is.True(task.Finished())
 	task.MarkAsFailed(nil)
-	task.MaxRetries < 0
+	task.MaxRetries = -1
 	is.True(task.Finished())
 	task.MaxRetries = 3
 	is.False(task.Finished())
