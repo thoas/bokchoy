@@ -303,7 +303,7 @@ func (p *RedisBroker) Consume(ctx context.Context, name string, eta time.Time) (
 }
 
 func (p *RedisBroker) payloadsFromKeys(ctx context.Context, taskKeys []string) (map[string]map[string]interface{}, error) {
-	vals, err := p.Client.EvalSha(ctx, p.scripts["MULTIHGETALL"], taskKeys).Result()
+	vals, err := p.evalSha(ctx, p.scripts["MULTIHGETALL"], taskKeys)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to MULTIHGETALL %s", strings.Join(taskKeys, ", "))
 	}
@@ -315,6 +315,21 @@ func (p *RedisBroker) payloadsFromKeys(ctx context.Context, taskKeys []string) (
 	}
 
 	return values, nil
+}
+
+// Try to re-init broker (effectively run ScriptLoad again) if we get NOSCRIPT error on EvalSha().
+// This is helpful when Redis is restarted or failover happens and our LUA scripts are gone from Redis.
+func (p *RedisBroker) evalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) (interface{}, error) {
+	vals, err := p.Client.EvalSha(ctx, sha1, keys, args).Result()
+	if err != nil && strings.Contains(err.Error(), "NOSCRIPT") {
+		if errInit := p.Initialize(ctx); errInit != nil {
+			p.Logger.Error(ctx, "Failed to re-initialize broker after NOSCRIPT error.", logging.Error(errInit))
+		} else {
+			p.Logger.Debug(ctx, "Successfully re-initialized broker after NOSCRIPT error.")
+			vals, err = p.Client.EvalSha(ctx, sha1, keys, args).Result()
+		}
+	}
+	return vals, err
 }
 
 // Get returns stored raw data from task key.
@@ -423,7 +438,7 @@ func (p *RedisBroker) Set(ctx context.Context, taskKey string, data map[string]i
 	values := []interface{}{int(expiration.Seconds())}
 	values = append(values, unpack(data)...)
 
-	_, err := p.Client.EvalSha(ctx, p.scripts["HMSETEXPIRE"], []string{prefixedTaskKey}, values...).Result()
+	_, err := p.evalSha(ctx, p.scripts["HMSETEXPIRE"], []string{prefixedTaskKey}, values...)
 	if err != nil {
 		return errors.Wrapf(err, "unable to HMSETEXPIRE %s", prefixedTaskKey)
 	}
