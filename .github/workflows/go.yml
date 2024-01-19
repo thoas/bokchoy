@@ -10,7 +10,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    container: golang:1.16
+    container: golang:1.21
     services:
       # Label used to access the service container
       redis:
