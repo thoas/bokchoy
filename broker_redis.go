@@ -10,8 +10,8 @@ import (
 
 	"github.com/thoas/bokchoy/logging"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 )
 
 // RedisBroker is the redis broker.
@@ -76,54 +76,51 @@ func newRedisBroker(cfg RedisConfig, logger logging.Logger) *RedisBroker {
 	switch cfg.Type {
 	case redisTypeSentinel:
 		clt = redis.NewFailoverClient(&redis.FailoverOptions{
-			MasterName:         cfg.Sentinel.MasterName,
-			SentinelAddrs:      cfg.Sentinel.SentinelAddrs,
-			Password:           cfg.Sentinel.Password,
-			MaxRetries:         cfg.Sentinel.MaxRetries,
-			DialTimeout:        cfg.Sentinel.DialTimeout,
-			ReadTimeout:        cfg.Sentinel.ReadTimeout,
-			WriteTimeout:       cfg.Sentinel.WriteTimeout,
-			PoolSize:           cfg.Sentinel.PoolSize,
-			PoolTimeout:        cfg.Sentinel.PoolTimeout,
-			IdleTimeout:        cfg.Sentinel.IdleTimeout,
-			MinIdleConns:       cfg.Sentinel.MinIdleConns,
-			MaxConnAge:         cfg.Sentinel.MaxConnAge,
-			IdleCheckFrequency: cfg.Sentinel.IdleCheckFrequency,
+			MasterName:      cfg.Sentinel.MasterName,
+			SentinelAddrs:   cfg.Sentinel.SentinelAddrs,
+			Password:        cfg.Sentinel.Password,
+			MaxRetries:      cfg.Sentinel.MaxRetries,
+			DialTimeout:     cfg.Sentinel.DialTimeout,
+			ReadTimeout:     cfg.Sentinel.ReadTimeout,
+			WriteTimeout:    cfg.Sentinel.WriteTimeout,
+			PoolSize:        cfg.Sentinel.PoolSize,
+			PoolTimeout:     cfg.Sentinel.PoolTimeout,
+			ConnMaxIdleTime: cfg.Sentinel.ConnMaxIdleTime,
+			ConnMaxLifetime: cfg.Sentinel.ConnMaxLifetime,
+			MinIdleConns:    cfg.Sentinel.MinIdleConns,
 		})
 	case redisTypeCluster:
 		clt = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:              cfg.Cluster.Addrs,
-			Password:           cfg.Cluster.Password,
-			MaxRetries:         cfg.Cluster.MaxRetries,
-			DialTimeout:        cfg.Cluster.DialTimeout,
-			ReadTimeout:        cfg.Cluster.ReadTimeout,
-			WriteTimeout:       cfg.Cluster.WriteTimeout,
-			PoolSize:           cfg.Cluster.PoolSize,
-			PoolTimeout:        cfg.Cluster.PoolTimeout,
-			IdleTimeout:        cfg.Cluster.IdleTimeout,
-			MinIdleConns:       cfg.Cluster.MinIdleConns,
-			MaxConnAge:         cfg.Cluster.MaxConnAge,
-			IdleCheckFrequency: cfg.Cluster.IdleCheckFrequency,
-			ReadOnly:           false,
-			RouteRandomly:      false,
-			RouteByLatency:     false,
+			Addrs:           cfg.Cluster.Addrs,
+			Password:        cfg.Cluster.Password,
+			MaxRetries:      cfg.Cluster.MaxRetries,
+			DialTimeout:     cfg.Cluster.DialTimeout,
+			ReadTimeout:     cfg.Cluster.ReadTimeout,
+			WriteTimeout:    cfg.Cluster.WriteTimeout,
+			PoolSize:        cfg.Cluster.PoolSize,
+			PoolTimeout:     cfg.Cluster.PoolTimeout,
+			ConnMaxIdleTime: cfg.Cluster.ConnMaxIdleTime,
+			ConnMaxLifetime: cfg.Cluster.ConnMaxLifetime,
+			MinIdleConns:    cfg.Cluster.MinIdleConns,
+			ReadOnly:        false,
+			RouteRandomly:   false,
+			RouteByLatency:  false,
 		})
 	default:
 		clt = redis.NewClient(&redis.Options{
-			Addr:               cfg.Client.Addr,
-			Password:           cfg.Client.Password,
-			DB:                 cfg.Client.DB,
-			MaxRetries:         cfg.Client.MaxRetries,
-			DialTimeout:        cfg.Client.DialTimeout,
-			ReadTimeout:        cfg.Client.ReadTimeout,
-			WriteTimeout:       cfg.Client.WriteTimeout,
-			PoolSize:           cfg.Client.PoolSize,
-			PoolTimeout:        cfg.Client.PoolTimeout,
-			IdleTimeout:        cfg.Client.IdleTimeout,
-			MinIdleConns:       cfg.Client.MinIdleConns,
-			MaxConnAge:         cfg.Client.MaxConnAge,
-			IdleCheckFrequency: cfg.Client.IdleCheckFrequency,
-			TLSConfig:          cfg.Client.TLSConfig,
+			Addr:            cfg.Client.Addr,
+			Password:        cfg.Client.Password,
+			DB:              cfg.Client.DB,
+			MaxRetries:      cfg.Client.MaxRetries,
+			DialTimeout:     cfg.Client.DialTimeout,
+			ReadTimeout:     cfg.Client.ReadTimeout,
+			WriteTimeout:    cfg.Client.WriteTimeout,
+			PoolSize:        cfg.Client.PoolSize,
+			PoolTimeout:     cfg.Client.PoolTimeout,
+			ConnMaxIdleTime: cfg.Client.ConnMaxIdleTime,
+			ConnMaxLifetime: cfg.Client.ConnMaxLifetime,
+			MinIdleConns:    cfg.Client.MinIdleConns,
+			TLSConfig:       cfg.Client.TLSConfig,
 		})
 
 	}
@@ -480,7 +477,7 @@ func (p *RedisBroker) publish(ctx context.Context, client redis.Cmdable, queueNa
 			if eta.Before(time.Now().UTC()) {
 				err = client.LPush(ctx, p.prefixed(queueName), taskID).Err()
 			} else {
-				err = client.ZAdd(ctx, p.prefixed(fmt.Sprint(queueName, ":delay")), &redis.Z{
+				err = client.ZAdd(ctx, p.prefixed(fmt.Sprint(queueName, ":delay")), redis.Z{
 					Score:  float64(eta.UTC().Unix()),
 					Member: taskID,
 				}).Err()

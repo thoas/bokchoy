@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/thoas/bokchoy/logging"
 	"github.com/thoas/go-funk"
 
