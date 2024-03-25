@@ -358,7 +358,7 @@ func (t *Task) Finished() bool {
 		return true
 	}
 
-	if (t.OldStatus == taskStatusFailed || t.Status == taskStatusFailed) && t.MaxRetries == 0 {
+	if (t.OldStatus == taskStatusFailed || t.Status == taskStatusFailed) && t.MaxRetries < 0 {
 		return true
 	}
 
